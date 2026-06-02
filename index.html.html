@@ -207,7 +207,19 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   <!-- ═══ RESULTS ═══ -->
   <div id="tab-results" class="section">
     <div class="info-banner">
-      <span class="live-dot"></span> Los resultados se actualizan automáticamente vía API cada 5 minutos durante el torneo. También puedes ingresar manualmente si lo necesitas.
+      <span class="live-dot"></span> Los resultados se actualizan automáticamente vía football-data.org cada 5 minutos. También puedes guardarlos manualmente.
+    </div>
+    <div id="api-key-panel" style="background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:14px;display:none">
+      <p style="font-size:13px;font-weight:500;margin-bottom:4px">🔑 API Key de football-data.org</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:10px">Pega tu clave aquí para activar los resultados automáticos.</p>
+      <div style="display:flex;gap:8px">
+        <input type="text" id="fd-key-input" placeholder="Pega tu API key aquí..." style="flex:1;padding:8px 12px;background:var(--dark4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px"/>
+        <button onclick="saveApiKey()" style="padding:8px 16px;background:var(--gold);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;white-space:nowrap">Activar</button>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div id="api-status" style="font-size:12px;color:var(--muted)"></div>
+      <button onclick="manualRefresh()" style="padding:5px 12px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--dark4);color:var(--text);cursor:pointer;display:flex;align-items:center;gap:5px"><i class="ti ti-refresh" aria-hidden="true"></i> Actualizar ahora</button>
     </div>
     <div id="results-content"></div>
   </div>
@@ -247,7 +259,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 // INSTRUCCIONES: Reemplaza estos valores con los de tu proyecto Supabase
 // URL: en Supabase → Settings → API → Project URL
 // KEY: en Supabase → Settings → API → anon public key
-const SUPABASE_URL = localStorage.getItem('sb_url') || 'https://horcriupdmevugrcjhzs.supabase.co/rest/v1/';
+const SUPABASE_URL = localStorage.getItem('sb_url') || 'https://horcriupdmevugrcjhzs.supabase.co';
 const SUPABASE_KEY = localStorage.getItem('sb_key') || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImhvcmNyaXVwZG1ldnVncmNqaHpzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODAzNjM1NTUsImV4cCI6MjA5NTkzOTU1NX0.Eb-XZSfIY63_oWHm5Xhhy2rLMuCI1wtV2sB0zle39c4';
 
 /* ─── SUPABASE INIT ─── */
@@ -429,25 +441,142 @@ async function saveResultToSupabase(matchId, homeScore, awayScore) {
   } catch(e) { console.log('Save result error:', e); }
 }
 
-/* ─── AUTO-REFRESH RESULTS (cada 5 min) ─── */
+/* ─── FOOTBALL-DATA.ORG API KEY ─── */
+// Pega tu API key aquí (la recibiste por email de football-data.org)
+const FOOTBALL_API_KEY = localStorage.getItem('fd_key') || 'c70c42f8d04442b4bb13f7e559c9f9a9';
+
+/* ─── MAPEO: nombres de equipos football-data.org → nuestros IDs de partido ─── */
+// Cada entrada es [equipoLocal, equipoVisitante] tal como los devuelve la API
+const MATCH_MAP = {
+  'Mexico_South Africa': 1,
+  'Korea Republic_Czechia': 2,
+  'Canada_Bosnia and Herzegovina': 3,
+  'USA_Paraguay': 4,
+  'Qatar_Switzerland': 5,
+  'Brazil_Morocco': 6,
+  'Haiti_Scotland': 7,
+  'Australia_Turkey': 8,
+  'Germany_Curaçao': 9,
+  'Netherlands_Japan': 10,
+  "Côte d'Ivoire_Ecuador": 11,
+  'Sweden_Tunisia': 12,
+  'Spain_Cape Verde': 13,
+  'Belgium_Egypt': 14,
+  'Saudi Arabia_Uruguay': 15,
+  'Iran_New Zealand': 16,
+  'France_Senegal': 17,
+  'Iraq_Norway': 18,
+  'Argentina_Algeria': 19,
+  'Austria_Jordan': 20,
+  'Portugal_DR Congo': 21,
+  'England_Croatia': 22,
+  'Ghana_Panama': 23,
+  'Uzbekistan_Colombia': 24,
+  'Czechia_South Africa': 25,
+  'Switzerland_Bosnia and Herzegovina': 26,
+  'Canada_Qatar': 27,
+  'Mexico_Korea Republic': 28,
+  'Scotland_Morocco': 29,
+  'USA_Australia': 30,
+  'Brazil_Haiti': 31,
+  'Turkey_Paraguay': 32,
+  'Netherlands_Sweden': 33,
+  'Germany_Côte d\'Ivoire': 34,
+  'Ecuador_Curaçao': 35,
+  'Tunisia_Japan': 36,
+  'Spain_Saudi Arabia': 37,
+  'Belgium_Iran': 38,
+  'Uruguay_Cape Verde': 39,
+  'New Zealand_Egypt': 40,
+  'Argentina_Austria': 41,
+  'France_Iraq': 42,
+  'Norway_Senegal': 43,
+  'Jordan_Algeria': 44,
+  'Portugal_Uzbekistan': 45,
+  'England_Ghana': 46,
+  'Panama_Croatia': 47,
+  'Colombia_DR Congo': 48,
+  'Switzerland_Canada': 49,
+  'Bosnia and Herzegovina_Qatar': 50,
+  'Scotland_Brazil': 51,
+  'Morocco_Haiti': 52,
+  'Czechia_Mexico': 53,
+  'South Africa_Korea Republic': 54,
+  'Ecuador_Germany': 55,
+  "Curaçao_Côte d'Ivoire": 56,
+  'Japan_Sweden': 57,
+  'Tunisia_Netherlands': 58,
+  'Turkey_USA': 59,
+  'Paraguay_Australia': 60,
+  'Norway_France': 61,
+  'Senegal_Iraq': 62,
+  'Cape Verde_Saudi Arabia': 63,
+  'Uruguay_Spain': 64,
+  'Egypt_Iran': 65,
+  'New Zealand_Belgium': 66,
+  'Panama_England': 67,
+  'Croatia_Ghana': 68,
+  'Colombia_Portugal': 69,
+  'DR Congo_Uzbekistan': 70,
+  'Algeria_Austria': 71,
+  'Jordan_Argentina': 72,
+};
+
+function matchKey(home, away) {
+  return `${home}_${away}`;
+}
+
+/* ─── AUTO-FETCH RESULTS cada 5 min ─── */
 async function autoFetchResults() {
-  // football-data.org free tier — requiere API key gratuita en football-data.org
-  // Por ahora usa los resultados guardados en Supabase / localStorage
-  // Cuando tengas una API key, descomenta y configura:
-  /*
-  const API_KEY = 'TU_API_KEY_FOOTBALL_DATA_ORG';
-  const resp = await fetch('https://api.football-data.org/v4/competitions/WC/matches?season=2026', {
-    headers: { 'X-Auth-Token': API_KEY }
-  });
-  const data = await resp.json();
-  data.matches.forEach(m => {
-    if (m.status === 'FINISHED') {
-      // mapear m.id a nuestros match IDs y guardar marcador
+  if (FOOTBALL_API_KEY === 'TU_API_KEY_AQUI') {
+    await loadFromSupabase();
+    updateLastRefresh();
+    return;
+  }
+  try {
+    const resp = await fetch(
+      'https://api.football-data.org/v4/competitions/WC/matches?season=2026',
+      { headers: { 'X-Auth-Token': FOOTBALL_API_KEY } }
+    );
+    if (!resp.ok) throw new Error(`API error ${resp.status}`);
+    const data = await resp.json();
+    let updated = 0;
+    for (const m of data.matches) {
+      if (m.status !== 'FINISHED' && m.status !== 'IN_PLAY' && m.status !== 'PAUSED') continue;
+      const home = m.homeTeam?.name || '';
+      const away = m.awayTeam?.name || '';
+      const key = matchKey(home, away);
+      const ourId = MATCH_MAP[key];
+      if (!ourId) continue;
+      const hs = m.score?.fullTime?.home;
+      const as = m.score?.fullTime?.away;
+      if (hs === null || hs === undefined || as === null || as === undefined) continue;
+      const existing = realResults[ourId];
+      if (existing?.home === hs && existing?.away === as) continue; // sin cambio
+      realResults[ourId] = { home: hs, away: as };
+      if (useSupabase) await saveResultToSupabase(ourId, hs, as);
+      else localStorage.setItem('qm26_r', JSON.stringify(realResults));
+      updated++;
     }
-  });
-  */
-  await loadFromSupabase();
+    if (updated > 0) {
+      console.log(`✅ ${updated} resultado(s) actualizado(s) desde football-data.org`);
+      renderResults();
+      renderRanking();
+      showToast(`${updated} resultado${updated > 1 ? 's' : ''} actualizado${updated > 1 ? 's' : ''} ✓`);
+    }
+  } catch (e) {
+    console.warn('football-data.org fetch error:', e.message);
+    await loadFromSupabase(); // fallback a Supabase
+  }
   updateLastRefresh();
+}
+
+function updateLastRefresh() {
+  const el = document.getElementById('last-update');
+  if (el) {
+    const apiActive = FOOTBALL_API_KEY !== 'TU_API_KEY_AQUI';
+    el.innerHTML = `<span class="live-dot"></span> ${apiActive ? 'API activa · ' : ''}Actualizado: ${new Date().toLocaleTimeString('es-MX')}`;
+  }
 }
 
 function updateLastRefresh() {
@@ -697,7 +826,7 @@ function showTab(t, btn) {
   document.getElementById('tab-' + t).classList.add('active');
   btn.classList.add('active');
   if (t === 'ranking') renderRanking();
-  if (t === 'results') renderResults();
+  if (t === 'results') { renderResults(); updateApiStatus(); }
 }
 
 /* ─── TOAST ─── */
@@ -705,6 +834,35 @@ function showToast(msg) {
   const el = document.getElementById('toast');
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2600);
+}
+
+/* ─── API KEY MANAGEMENT ─── */
+function saveApiKey() {
+  const key = document.getElementById('fd-key-input')?.value.trim();
+  if (!key || key.length < 10) { showToast('Clave inválida'); return; }
+  localStorage.setItem('fd_key', key);
+  location.reload();
+}
+
+function updateApiStatus() {
+  const el = document.getElementById('api-status');
+  const panel = document.getElementById('api-key-panel');
+  if (!el) return;
+  const active = FOOTBALL_API_KEY !== 'TU_API_KEY_AQUI' && FOOTBALL_API_KEY.length > 10;
+  if (active) {
+    el.innerHTML = '<span style="color:#4dff91">✓ API activa — resultados automáticos cada 5 min</span>';
+    if (panel) panel.style.display = 'none';
+  } else {
+    el.innerHTML = '<span style="color:var(--muted)">Sin API key — ingresa resultados manualmente o activa la API abajo</span>';
+    if (panel) panel.style.display = 'block';
+  }
+}
+
+async function manualRefresh() {
+  showToast('Actualizando resultados...');
+  await autoFetchResults();
+  renderResults();
+  renderRanking();
 }
 
 /* ─── BOOT ─── */
@@ -715,7 +873,9 @@ async function init() {
   document.getElementById('pcount').textContent = participants.length;
   renderFilters();
   renderMatches();
-  setInterval(autoFetchResults, 5 * 60 * 1000); // cada 5 min
+  // fetch inmediato al cargar, luego cada 5 min
+  await autoFetchResults();
+  setInterval(autoFetchResults, 5 * 60 * 1000);
 }
 
 init();
@@ -723,6 +883,7 @@ window.adj = adj; window.sp = sp; window.submitPicks = submitPicks;
 window.showTab = showTab; window.saveResult = saveResult;
 window.setPhase = setPhase; window.saveConfig = saveConfig;
 window.useLocal = useLocal; window.toggleDetail = toggleDetail;
+window.saveApiKey = saveApiKey; window.manualRefresh = manualRefresh;
 </script>
 </body>
 </html>
