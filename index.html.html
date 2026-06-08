@@ -174,6 +174,39 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .selected-tag button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:14px;padding:0;line-height:1;opacity:.7}
 .selected-tag button:hover{opacity:1}
 
+/* ── ADMIN PANEL ── */
+.admin-lock{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 20px;text-align:center}
+.admin-lock h2{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:2px;color:var(--gold);margin-bottom:8px}
+.admin-lock p{font-size:13px;color:var(--muted);margin-bottom:20px}
+.pin-wrap{display:flex;gap:8px;margin-bottom:16px}
+.pin-input{width:100%;padding:10px 14px;background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;text-align:center;letter-spacing:4px}
+.pin-input:focus{outline:none;border-color:rgba(255,214,0,.5)}
+.admin-section{margin-bottom:24px}
+.admin-section-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-bottom:16px}
+.admin-stat{background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px}
+.admin-stat-val{font-size:26px;font-weight:600;color:var(--gold)}
+.admin-stat-lbl{font-size:11px;color:var(--muted);margin-top:2px}
+.admin-table{width:100%;border-collapse:collapse;font-size:12px}
+.admin-table th{text-align:left;padding:7px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase;letter-spacing:.05em}
+.admin-table td{padding:8px 8px;border-bottom:1px solid var(--border);vertical-align:middle}
+.admin-table tr:hover td{background:rgba(255,255,255,.02)}
+.paid-badge{font-size:10px;padding:2px 8px;border-radius:20px;font-weight:500;cursor:pointer;border:none}
+.paid-yes{background:rgba(0,200,83,.15);color:#4dff91}
+.paid-no{background:rgba(255,23,68,.12);color:#ff6b8a}
+.admin-btn{padding:6px 12px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--dark4);color:var(--text);cursor:pointer;transition:background .15s}
+.admin-btn:hover{background:#2a2a2a}
+.admin-btn-danger{border-color:rgba(255,23,68,.3);color:#ff6b8a}
+.admin-btn-danger:hover{background:rgba(255,23,68,.1)}
+.admin-btn-gold{background:rgba(255,214,0,.12);border-color:rgba(255,214,0,.3);color:var(--gold)}
+.progress-bar{height:6px;background:var(--dark4);border-radius:3px;overflow:hidden;margin-top:4px}
+.progress-fill{height:100%;background:var(--gold);border-radius:3px;transition:width .3s}
+.chart-row{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.chart-label{font-size:12px;color:var(--text);width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.chart-bar-wrap{flex:1;height:18px;background:var(--dark4);border-radius:4px;overflow:hidden}
+.chart-bar-fill{height:100%;background:linear-gradient(90deg,rgba(255,214,0,.6),rgba(255,214,0,.3));border-radius:4px;transition:width .4s}
+.chart-pct{font-size:11px;color:var(--muted);width:34px;text-align:right}
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -196,6 +229,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   <button class="tab" onclick="showTab('ranking',this)">🏆 Leaderboard</button>
   <button class="tab" onclick="showTab('results',this)">Marcadores</button>
   <button class="tab" onclick="showTab('scoring',this)">Puntuación</button>
+  <button class="tab" onclick="showTab('admin',this)">⚙️ Admin</button>
 </div>
 
 <div class="main">
@@ -295,6 +329,71 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
     <div class="info-banner">⭐ Pronostica premios especiales del Mundial. Cada acierto vale <strong>2 puntos extra</strong>. Se revelan al inicio del torneo.</div>
     <div id="bonus-list"></div>
     <button class="btn-submit" id="bonus-submit-btn" onclick="submitBonus()">Guardar pronósticos bonus →</button>
+  </div>
+
+  <!-- ═══ ADMIN ═══ -->
+  <div id="tab-admin" class="section">
+    <div id="admin-lock-screen" class="admin-lock">
+      <div style="font-size:48px;margin-bottom:12px">🔐</div>
+      <h2>Panel de Administrador</h2>
+      <p>Ingresa tu contraseña de admin para continuar</p>
+      <div style="width:100%;max-width:280px">
+        <input class="pin-input" type="password" id="admin-pin-input" placeholder="Contraseña" maxlength="20"
+          onkeydown="if(event.key==='Enter')checkAdminPin()"/>
+        <button class="btn-submit" style="margin-top:12px" onclick="checkAdminPin()">Entrar →</button>
+        <p id="pin-error" style="color:#ff6b8a;font-size:12px;margin-top:8px;display:none">Contraseña incorrecta</p>
+      </div>
+    </div>
+    <div id="admin-panel" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold)">Panel Admin</p>
+        <div style="display:flex;gap:8px">
+          <button class="admin-btn admin-btn-gold" onclick="exportCSV()">⬇ Exportar CSV</button>
+          <button class="admin-btn" onclick="lockAdmin()">Cerrar sesión</button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="admin-section">
+        <div class="admin-section-title">📊 Resumen general</div>
+        <div class="admin-stat-grid" id="admin-stats"></div>
+      </div>
+
+      <!-- POT -->
+      <div class="admin-section">
+        <div class="admin-section-title">💰 Control de pagos</div>
+        <div style="background:var(--dark3);border:1px solid rgba(255,214,0,.2);border-radius:var(--radius);padding:14px 16px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center">
+          <div>
+            <div style="font-size:11px;color:var(--muted)">Cuota por persona</div>
+            <div style="display:flex;align-items:center;gap:8px;margin-top:4px">
+              <span style="font-size:13px;color:var(--muted)">$</span>
+              <input type="number" id="cuota-input" value="100" min="0"
+                style="width:80px;background:var(--dark4);border:1px solid var(--border);border-radius:6px;padding:4px 8px;color:var(--text);font-size:14px;font-weight:600"
+                onchange="renderAdminPayments()"/>
+              <span style="font-size:13px;color:var(--muted)">MXN</span>
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div style="font-size:11px;color:var(--muted)">Pot acumulado</div>
+            <div id="pot-total" style="font-size:24px;font-weight:600;color:#4dff91">$0</div>
+          </div>
+        </div>
+        <div id="payments-table"></div>
+      </div>
+
+      <!-- PARTICIPANTS -->
+      <div class="admin-section">
+        <div class="admin-section-title">👥 Participantes</div>
+        <div id="participants-table"></div>
+      </div>
+
+      <!-- STATS CHARTS -->
+      <div class="admin-section">
+        <div class="admin-section-title">📈 Estadísticas de picks</div>
+        <div id="pick-stats"></div>
+      </div>
+
+    </div>
   </div>
 
 </div><!-- /main -->
@@ -471,6 +570,9 @@ async function loadFromSupabase() {
       // Load own bonus from server if available
       const me = pData.find(p => p.name === localStorage.getItem('qm26_name'));
       if (me?.bonus) { myBonus = me.bonus; localStorage.setItem('qm26_bonus', JSON.stringify(myBonus)); }
+      // Load paid status
+      pData.forEach(p => { if (p.paid) paidMap[p.name] = true; });
+      localStorage.setItem('qm26_paid', JSON.stringify(paidMap));
     }
     const { data: rData } = await sb.from('results').select('*');
     if (rData) {
@@ -939,6 +1041,7 @@ function showTab(t, btn) {
   if (t === 'ranking') renderRanking();
   if (t === 'results') { renderResults(); updateApiStatus(); }
   if (t === 'bonus') renderBonus();
+  if (t === 'admin') { if (adminUnlocked) renderAdminPanel(); }
 }
 
 /* ─── TOAST ─── */
@@ -1281,6 +1384,262 @@ async function manualRefresh() {
   renderRanking();
 }
 
+/* ─── ADMIN CONFIG ─── */
+// Cambia esta contraseña por la tuya
+const ADMIN_PASSWORD = 'Mundial2026Admin';
+let adminUnlocked = false;
+let paidMap = {};
+try { paidMap = JSON.parse(localStorage.getItem('qm26_paid') || '{}'); } catch(e) {}
+
+/* ─── ADMIN AUTH ─── */
+function checkAdminPin() {
+  const val = document.getElementById('admin-pin-input')?.value;
+  if (val === ADMIN_PASSWORD) {
+    adminUnlocked = true;
+    document.getElementById('admin-lock-screen').style.display = 'none';
+    document.getElementById('admin-panel').style.display = 'block';
+    renderAdminPanel();
+  } else {
+    document.getElementById('pin-error').style.display = 'block';
+    document.getElementById('admin-pin-input').value = '';
+  }
+}
+
+function lockAdmin() {
+  adminUnlocked = false;
+  document.getElementById('admin-lock-screen').style.display = 'flex';
+  document.getElementById('admin-panel').style.display = 'none';
+  document.getElementById('admin-pin-input').value = '';
+  document.getElementById('pin-error').style.display = 'none';
+}
+
+/* ─── ADMIN RENDER ─── */
+function renderAdminPanel() {
+  if (!adminUnlocked) return;
+  renderAdminStats();
+  renderAdminPayments();
+  renderParticipantsTable();
+  renderPickStats();
+}
+
+function renderAdminStats() {
+  const total = participants.length;
+  const paid = participants.filter(p => paidMap[p.name]).length;
+  const cuota = parseInt(document.getElementById('cuota-input')?.value || 100);
+  const pot = paid * cuota;
+  const started = MATCHES.filter(m => isStarted(m.dt)).length;
+  const fullPicks = participants.filter(p => {
+    const notStarted = MATCHES.filter(m => !isStarted(m.dt));
+    return notStarted.every(m => p.picks && p.picks[m.id] !== undefined);
+  }).length;
+
+  document.getElementById('admin-stats').innerHTML = `
+    <div class="admin-stat">
+      <div class="admin-stat-val">${total}</div>
+      <div class="admin-stat-lbl">Participantes totales</div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-val" style="color:#4dff91">$${(pot).toLocaleString()}</div>
+      <div class="admin-stat-lbl">Pot acumulado MXN</div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-val">${paid}/${total}</div>
+      <div class="admin-stat-lbl">Han pagado</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${total?Math.round(paid/total*100):0}%"></div></div>
+    </div>
+    <div class="admin-stat">
+      <div class="admin-stat-val">${started}/104</div>
+      <div class="admin-stat-lbl">Partidos jugados</div>
+      <div class="progress-bar"><div class="progress-fill" style="width:${Math.round(started/104*100)}%"></div></div>
+    </div>`;
+}
+
+function renderAdminPayments() {
+  const cuota = parseInt(document.getElementById('cuota-input')?.value || 100);
+  const paid = participants.filter(p => paidMap[p.name]).length;
+  document.getElementById('pot-total').textContent = '$' + (paid * cuota).toLocaleString() + ' MXN';
+  renderAdminStats();
+
+  const sorted = [...participants].sort((a,b) => {
+    const ap = paidMap[a.name] ? 1 : 0, bp = paidMap[b.name] ? 1 : 0;
+    return bp - ap || a.name.localeCompare(b.name);
+  });
+
+  let html = `<table class="admin-table">
+    <thead><tr><th>#</th><th>Nombre</th><th>Registro</th><th>Pago</th><th>Acciones</th></tr></thead><tbody>`;
+  sorted.forEach((p, i) => {
+    const isPaid = !!paidMap[p.name];
+    const date = p.updated_at ? new Date(p.updated_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short'}) : '—';
+    html += `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500">${p.name}</td>
+      <td style="color:var(--muted)">${date}</td>
+      <td><button class="paid-badge ${isPaid?'paid-yes':'paid-no'}" onclick="togglePaid('${p.name.replace(/'/g,"\'")}')">
+        ${isPaid ? '✓ Pagó' : '✗ Pendiente'}
+      </button></td>
+      <td><button class="admin-btn admin-btn-danger" onclick="deleteParticipant('${p.name.replace(/'/g,"\'")}')">Eliminar</button></td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  if (!participants.length) html = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Aún no hay participantes.</p>';
+  document.getElementById('payments-table').innerHTML = html;
+}
+
+function renderParticipantsTable() {
+  const totalMatches = MATCHES.filter(m => !isStarted(m.dt)).length;
+  const sorted = [...participants].sort((a,b) => getTotalPts(b) - getTotalPts(a));
+  let html = `<table class="admin-table">
+    <thead><tr><th>#</th><th>Nombre</th><th>Picks llenados</th><th>Bonus</th><th>Pts</th><th>Último acceso</th></tr></thead><tbody>`;
+  sorted.forEach((p, i) => {
+    const filledPicks = MATCHES.filter(m => !isStarted(m.dt) && p.picks && p.picks[m.id] !== undefined).length;
+    const pct = totalMatches ? Math.round(filledPicks / totalMatches * 100) : 100;
+    const bonusCount = p.bonus ? Object.keys(p.bonus).length : 0;
+    const pts = getTotalPts(p);
+    const date = p.updated_at ? new Date(p.updated_at).toLocaleDateString('es-MX',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'}) : '—';
+    html += `<tr>
+      <td style="color:var(--muted)">${i+1}</td>
+      <td style="font-weight:500">${p.name}</td>
+      <td>
+        <div style="font-size:11px;color:${pct===100?'#4dff91':'var(--gold)'}">
+          ${filledPicks}/${totalMatches} (${pct}%)
+        </div>
+        <div class="progress-bar" style="margin-top:3px"><div class="progress-fill" style="width:${pct}%;background:${pct===100?'#4dff91':'var(--gold)'}"></div></div>
+      </td>
+      <td style="color:${bonusCount>0?'var(--gold)':'var(--muted)'}">
+        ${bonusCount}/${BONUS_QUESTIONS.length}
+      </td>
+      <td style="font-weight:600;color:var(--gold)">${pts}</td>
+      <td style="color:var(--muted);font-size:11px">${date}</td>
+    </tr>`;
+  });
+  html += '</tbody></table>';
+  if (!participants.length) html = '<p style="color:var(--muted);font-size:13px;padding:12px 0">Aún no hay participantes.</p>';
+  document.getElementById('participants-table').innerHTML = html;
+}
+
+function renderPickStats() {
+  if (!participants.length) {
+    document.getElementById('pick-stats').innerHTML = '<p style="color:var(--muted);font-size:13px">Sin datos aún.</p>';
+    return;
+  }
+  // Stats por partido más reñido (mayor variedad de pronósticos)
+  const matchStats = {};
+  MATCHES.slice(0,72).forEach(m => {
+    const picks = participants.map(p => p.picks?.[m.id]).filter(Boolean);
+    if (!picks.length) return;
+    const homeWins = picks.filter(pk => parseInt(pk.home) > parseInt(pk.away)).length;
+    const draws = picks.filter(pk => parseInt(pk.home) === parseInt(pk.away)).length;
+    const awayWins = picks.filter(pk => parseInt(pk.home) < parseInt(pk.away)).length;
+    const total = picks.length;
+    if (total > 0) matchStats[m.id] = { m, homeWins, draws, awayWins, total };
+  });
+
+  // Top 5 partidos con más picks registrados
+  const topMatches = Object.values(matchStats)
+    .sort((a,b) => b.total - a.total).slice(0, 8);
+
+  let html = '<p style="font-size:12px;color:var(--muted);margin-bottom:10px">¿Por quién apuesta más tu grupo? (% del grupo que pronosticó victoria local)</p>';
+  topMatches.forEach(({ m, homeWins, draws, awayWins, total }) => {
+    const homePct = Math.round(homeWins/total*100);
+    const drawPct = Math.round(draws/total*100);
+    const awayPct = Math.round(awayWins/total*100);
+    html += `<div style="margin-bottom:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:4px">
+        <span style="font-size:12px;font-weight:500">${m.h} vs ${m.a}</span>
+        <span style="font-size:11px;color:var(--muted)">${total} picks</span>
+      </div>
+      <div style="display:flex;gap:2px;height:20px;border-radius:4px;overflow:hidden">
+        ${homePct>0?`<div style="width:${homePct}%;background:rgba(255,214,0,.5);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:600;color:#000">${homePct}%</div>`:''}
+        ${drawPct>0?`<div style="width:${drawPct}%;background:rgba(150,150,150,.4);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text)">${drawPct}%</div>`:''}
+        ${awayPct>0?`<div style="width:${awayPct}%;background:rgba(100,160,255,.4);display:flex;align-items:center;justify-content:center;font-size:10px;color:var(--text)">${awayPct}%</div>`:''}
+      </div>
+      <div style="display:flex;gap:12px;margin-top:3px;font-size:10px;color:var(--muted)">
+        <span style="color:rgba(255,214,0,.7)">▮ ${m.h} ${homePct}%</span>
+        <span>▮ Empate ${drawPct}%</span>
+        <span style="color:rgba(100,160,255,.7)">▮ ${m.a} ${awayPct}%</span>
+      </div>
+    </div>`;
+  });
+
+  // Bonus stats — campeón favorito del grupo
+  const champVotes = {};
+  participants.forEach(p => {
+    if (p.bonus?.b1) {
+      const t = p.bonus.b1;
+      champVotes[t] = (champVotes[t] || 0) + 1;
+    }
+  });
+  const champEntries = Object.entries(champVotes).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (champEntries.length) {
+    html += `<p style="font-size:12px;font-weight:500;color:var(--text);margin:16px 0 8px">🏆 Campeón favorito del grupo</p>`;
+    champEntries.forEach(([team, votes]) => {
+      const pct = Math.round(votes / participants.length * 100);
+      html += `<div class="chart-row">
+        <span class="chart-label">${team}</span>
+        <div class="chart-bar-wrap"><div class="chart-bar-fill" style="width:${pct}%"></div></div>
+        <span class="chart-pct">${votes} voto${votes>1?'s':''}</span>
+      </div>`;
+    });
+  }
+
+  document.getElementById('pick-stats').innerHTML = html;
+}
+
+/* ─── ADMIN ACTIONS ─── */
+function togglePaid(name) {
+  paidMap[name] = !paidMap[name];
+  if (!paidMap[name]) delete paidMap[name];
+  localStorage.setItem('qm26_paid', JSON.stringify(paidMap));
+  // Also save to Supabase if available
+  if (useSupabase) {
+    sb.from('participants').update({ paid: !!paidMap[name] }).eq('name', name).then(() => {});
+  }
+  renderAdminPayments();
+  renderAdminStats();
+}
+
+async function deleteParticipant(name) {
+  if (!confirm(`¿Eliminar a "${name}"? Esta acción no se puede deshacer.`)) return;
+  if (useSupabase) {
+    await sb.from('participants').delete().eq('name', name);
+    await loadFromSupabase();
+  } else {
+    participants = participants.filter(p => p.name !== name);
+    localStorage.setItem('qm26_p', JSON.stringify(participants));
+  }
+  document.getElementById('pcount').textContent = participants.length;
+  renderAdminPanel();
+  showToast(`${name} eliminado ✓`);
+}
+
+function exportCSV() {
+  if (!participants.length) { showToast('Sin participantes para exportar'); return; }
+  const started = MATCHES.filter(m => isStarted(m.dt));
+  let csv = 'Nombre,Puntos,Pagó,Registro';
+  started.forEach(m => { csv += `,${m.h} vs ${m.a}`; });
+  csv += '
+';
+  const sorted = [...participants].sort((a,b) => getTotalPts(b)-getTotalPts(a));
+  sorted.forEach(p => {
+    const pts = getTotalPts(p);
+    const paid = paidMap[p.name] ? 'Sí' : 'No';
+    const date = p.updated_at ? new Date(p.updated_at).toLocaleDateString('es-MX') : '';
+    let row = `"${p.name}",${pts},${paid},${date}`;
+    started.forEach(m => {
+      const pk = p.picks?.[m.id];
+      row += `,${pk ? pk.home+'-'+pk.away : ''}`;
+    });
+    csv += row + '
+';
+  });
+  const blob = new Blob(['﻿'+csv], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'quiniela-mundial-2026.csv';
+  a.click(); URL.revokeObjectURL(url);
+  showToast('CSV descargado ✓');
+}
+
 /* ─── BOOT ─── */
 async function init() {
   initSupabase();
@@ -1300,6 +1659,9 @@ window.showTab = showTab; window.saveResult = saveResult;
 window.setPhase = setPhase; window.saveConfig = saveConfig;
 window.useLocal = useLocal; window.toggleDetail = toggleDetail;
 window.saveApiKey = saveApiKey; window.manualRefresh = manualRefresh;
+window.checkAdminPin = checkAdminPin; window.lockAdmin = lockAdmin;
+window.togglePaid = togglePaid; window.deleteParticipant = deleteParticipant;
+window.exportCSV = exportCSV; window.renderAdminPayments = renderAdminPayments;
 </script>
 </body>
 </html>
