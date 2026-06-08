@@ -257,11 +257,26 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
       <table class="scoring-table">
         <thead><tr><th>Tipo de acierto</th><th>Puntos</th></tr></thead>
         <tbody>
-          <tr><td>⚽ Marcador exacto — adivinas el resultado exacto (ej. 2-1)</td><td><strong style="color:#4dff91">3 pts</strong></td></tr>
-          <tr><td>✅ Resultado correcto — aciertas el ganador o el empate</td><td><strong style="color:var(--gold)">1 pt</strong></td></tr>
+          <tr><td>🏆 Marcador exacto — aciertas el marcador completo (ej. 2-1)</td><td><strong style="color:#4dff91">5 pts</strong></td></tr>
+          <tr><td>🤝 Empate correcto — pronosticaste empate y fue empate</td><td><strong style="color:#7dd3fc">3 pts</strong></td></tr>
+          <tr><td>✅ Ganador correcto — aciertas qué equipo ganó</td><td><strong style="color:var(--gold)">2 pts</strong></td></tr>
+          <tr><td>⚽ Goles local exactos — aciertas los goles del equipo local</td><td><strong style="color:var(--gold)">+1 pt</strong></td></tr>
+          <tr><td>⚽ Goles visitante exactos — aciertas los goles del visitante</td><td><strong style="color:var(--gold)">+1 pt</strong></td></tr>
           <tr><td>❌ Resultado incorrecto</td><td><strong style="color:var(--muted)">0 pts</strong></td></tr>
         </tbody>
       </table>
+      <div style="margin-top:12px;background:var(--dark4);border-radius:8px;padding:12px 14px;font-size:12px;color:var(--muted);line-height:1.8">
+        <strong style="color:var(--text);display:block;margin-bottom:6px">Ejemplos — Resultado real: México 2 — 1 Polonia</strong>
+        <span style="color:#4dff91">▸ Pronosticaste 2-1</span> → Marcador exacto = <strong style="color:#4dff91">5 pts</strong><br>
+        <span style="color:var(--gold)">▸ Pronosticaste 1-0</span> → Ganador correcto +2, Visitante exacto +1 = <strong style="color:var(--gold)">3 pts</strong><br>
+        <span style="color:var(--gold)">▸ Pronosticaste 2-0</span> → Ganador correcto +2, Local exacto +1 = <strong style="color:var(--gold)">3 pts</strong><br>
+        <span style="color:var(--gold)">▸ Pronosticaste 3-1</span> → Ganador correcto +2, Visitante exacto +1 = <strong style="color:var(--gold)">3 pts</strong><br>
+        <span style="color:#aaa">▸ Pronosticaste 0-0</span> → Incorrecto = <strong style="color:var(--muted)">0 pts</strong><br>
+        <span style="color:#7dd3fc">▸ Resultado real fue 1-1 y pronosticaste 0-0</span> → Empate correcto +3 = <strong style="color:#7dd3fc">3 pts</strong>
+      </div>
+      <div style="margin-top:10px;background:rgba(255,214,0,.07);border:1px solid rgba(255,214,0,.2);border-radius:8px;padding:10px 14px;font-size:12px;color:rgba(255,214,0,.8)">
+        ⚠️ Máximo <strong>5 puntos por partido</strong>. El marcador exacto ya incluye todos los aciertos posibles.
+      </div>
     </div>
     <div class="card">
       <p style="font-family:'Bebas Neue',sans-serif;font-size:17px;letter-spacing:2px;color:var(--gold);margin-bottom:12px">Cómo leer las líneas de apuesta</p>
@@ -632,9 +647,46 @@ function calcPts(pick, real) {
   if (!real) return null;
   const ph = parseInt(pick.home), pa = parseInt(pick.away);
   const rh = parseInt(real.home), ra = parseInt(real.away);
-  if (ph === rh && pa === ra) return 3;
-  if (getRes(ph, pa) === getRes(rh, ra)) return 1;
-  return 0;
+
+  // Marcador exacto = 5 pts (tope máximo, shortcut)
+  if (ph === rh && pa === ra) return 5;
+
+  let pts = 0;
+
+  // Resultado correcto
+  const res = getRes(ph, pa);
+  const realRes = getRes(rh, ra);
+  if (res === realRes) {
+    pts += (res === 'D') ? 3 : 2; // Empate = 3, Ganador = 2
+  }
+
+  // Goles local exactos = +1
+  if (ph === rh) pts += 1;
+  // Goles visitante exactos = +1
+  if (pa === ra) pts += 1;
+
+  // Tope máximo 5 pts (aunque en la práctica con marcador no exacto no llega a 5)
+  return Math.min(pts, 5);
+}
+
+// Desglose de puntos para mostrar en detalle
+function calcPtsDetail(pick, real) {
+  if (!real) return null;
+  const ph = parseInt(pick.home), pa = parseInt(pick.away);
+  const rh = parseInt(real.home), ra = parseInt(real.away);
+  if (ph === rh && pa === ra) return { pts:5, label:'exacto +5' };
+
+  let pts = 0, parts = [];
+  const res = getRes(ph, pa), realRes = getRes(rh, ra);
+  if (res === realRes) {
+    if (res === 'D') { pts += 3; parts.push('empate +3'); }
+    else { pts += 2; parts.push('ganador +2'); }
+  }
+  if (ph === rh) { pts += 1; parts.push('local +1'); }
+  if (pa === ra) { pts += 1; parts.push('visita +1'); }
+  pts = Math.min(pts, 5);
+  if (pts === 0) return { pts:0, label:'incorrecto' };
+  return { pts, label: parts.join(' · ') };
 }
 function oddsClass(o) {
   if (!o) return 'odd odd-dog';
@@ -821,11 +873,13 @@ function toggleDetail(btn, name) {
   started.forEach(m => {
     const pick = p.picks && p.picks[m.id];
     const real = realResults[m.id];
-    const pts2 = pick && real ? calcPts(pick, real) : null;
+    const detail = pick && real ? calcPtsDetail(pick, real) : null;
     let badge = '<span class="res-tag res-pend">pendiente</span>';
-    if (pts2 === 3) badge = '<span class="res-tag res-exact">exacto +3</span>';
-    else if (pts2 === 1) badge = '<span class="res-tag res-ok">resultado +1</span>';
-    else if (pts2 === 0) badge = '<span class="res-tag res-wrong">incorrecto</span>';
+    if (detail) {
+      if (detail.pts === 5) badge = `<span class="res-tag res-exact">exacto +5</span>`;
+      else if (detail.pts > 0) badge = `<span class="res-tag res-ok">${detail.label} = +${detail.pts}</span>`;
+      else badge = '<span class="res-tag res-wrong">incorrecto</span>';
+    }
     html += `<div class="pick-row">
       <span class="pick-match">${m.h} vs ${m.a}</span>
       <span class="pick-score">${pick ? pick.home + '-' + pick.away : '?'}</span>
