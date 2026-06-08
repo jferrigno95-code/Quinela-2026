@@ -167,7 +167,9 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   <div id="tab-picks" class="section active">
     <div class="nrow">
       <label>Tu nombre</label>
-      <input type="text" id="pname" placeholder="Ej. Juan García" maxlength="30"/>
+      <input type="text" id="pname" placeholder="Ej. Juan García" maxlength="30"
+        onchange="loadMyPicks(this.value)"
+        onblur="loadMyPicks(this.value)"/>
     </div>
     <div class="banner">🔒 Picks se bloquean al inicio de cada partido. Los picks ajenos solo son visibles cuando el partido comenzó.</div>
     <div class="filters" id="phase-filters"></div>
@@ -616,6 +618,23 @@ function sp(id,side,v){
 /* ════════════════════════════════════════
    SUBMIT PICKS
    ════════════════════════════════════════ */
+function loadMyPicks(name){
+  if(!name.trim()) return;
+  localStorage.setItem('qm26_name', name.trim());
+  const me = participants.find(p => p.name === name.trim());
+  if(!me) return;
+  if(me.picks){
+    myPicks = {...me.picks};
+    localStorage.setItem('qm26_my', JSON.stringify(myPicks));
+    renderMatches(); // re-render to show saved scores in inputs
+    toast('Picks cargados ✓');
+  }
+  if(me.bonus){
+    myBonus = {...me.bonus};
+    localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
+  }
+}
+
 async function submitPicks(){
   const name=document.getElementById('pname').value.trim();
   if(!name){toast('Escribe tu nombre primero');return;}
@@ -1072,6 +1091,23 @@ async function init(){
   initSupabase();
   if(useSupabase) await loadFromSupabase();
   document.getElementById('pcount').textContent=participants.length;
+
+  // Restore name and picks from last session
+  const savedName = localStorage.getItem('qm26_name') || '';
+  if(savedName){
+    document.getElementById('pname').value = savedName;
+    // Load this user's picks from participants list (Supabase or local)
+    const me = participants.find(p => p.name === savedName);
+    if(me && me.picks){
+      myPicks = {...me.picks};
+      localStorage.setItem('qm26_my', JSON.stringify(myPicks));
+    }
+    if(me && me.bonus){
+      myBonus = {...me.bonus};
+      localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
+    }
+  }
+
   renderFilters();
   renderMatches();
   await autoFetchResults();
