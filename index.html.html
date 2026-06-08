@@ -149,6 +149,31 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .live-dot{display:inline-block;width:6px;height:6px;background:var(--red);border-radius:50%;margin-right:4px;animation:pulse 1.4s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
 
+/* ── SCORE CONTROLS FIXED ── */
+.score-ctrl-wrap{display:flex;align-items:center;gap:6px;flex-shrink:0}
+.team-score-block{display:flex;align-items:center;gap:3px}
+
+/* ── BONUS SECTION ── */
+.bonus-card{background:var(--dark3);border:1px solid rgba(255,214,0,.2);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.bonus-title{font-family:'Bebas Neue',sans-serif;font-size:13px;letter-spacing:1.5px;color:var(--gold);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.bonus-pts-badge{font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;padding:2px 7px;background:rgba(255,214,0,.12);color:var(--gold);border-radius:10px;letter-spacing:0}
+.bonus-row{margin-bottom:10px}
+.bonus-label{font-size:12px;color:var(--muted);margin-bottom:5px;display:block}
+.search-wrap{position:relative}
+.bonus-search{width:100%;padding:8px 12px 8px 32px;background:var(--dark4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif}
+.bonus-search:focus{outline:none;border-color:rgba(255,214,0,.4)}
+.bonus-search::placeholder{color:var(--muted)}
+.search-icon{position:absolute;left:10px;top:50%;transform:translateY(-50%);color:var(--muted);font-size:14px;pointer-events:none}
+.dropdown-list{position:absolute;top:calc(100% + 4px);left:0;right:0;background:var(--dark3);border:1px solid rgba(255,214,0,.25);border-radius:8px;z-index:50;max-height:200px;overflow-y:auto;display:none}
+.dropdown-list.open{display:block}
+.dropdown-item{padding:9px 12px;font-size:13px;cursor:pointer;color:var(--text);border-bottom:1px solid var(--border);transition:background .1s}
+.dropdown-item:last-child{border-bottom:none}
+.dropdown-item:hover{background:rgba(255,214,0,.08);color:var(--gold)}
+.dropdown-item.selected{background:rgba(255,214,0,.12);color:var(--gold)}
+.selected-tag{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;background:rgba(255,214,0,.12);border:1px solid rgba(255,214,0,.3);border-radius:20px;font-size:12px;color:var(--gold);margin-top:4px}
+.selected-tag button{background:none;border:none;color:var(--gold);cursor:pointer;font-size:14px;padding:0;line-height:1;opacity:.7}
+.selected-tag button:hover{opacity:1}
+
 /* ── SCROLLBAR ── */
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-track{background:transparent}
@@ -167,6 +192,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 
 <div class="tabs">
   <button class="tab active" onclick="showTab('picks',this)">Mis picks</button>
+  <button class="tab" onclick="showTab('bonus',this)">⭐ Bonus</button>
   <button class="tab" onclick="showTab('ranking',this)">🏆 Leaderboard</button>
   <button class="tab" onclick="showTab('results',this)">Marcadores</button>
   <button class="tab" onclick="showTab('scoring',this)">Puntuación</button>
@@ -247,6 +273,13 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
         <span class="odd odd-ou">O/U 2.5</span> &nbsp;Over/Under — el total de goles esperados en el partido.
       </p>
     </div>
+  </div>
+
+  <!-- ═══ BONUS ═══ -->
+  <div id="tab-bonus" class="section">
+    <div class="info-banner">⭐ Pronostica premios especiales del Mundial. Cada acierto vale <strong>2 puntos extra</strong>. Se revelan al inicio del torneo.</div>
+    <div id="bonus-list"></div>
+    <button class="btn-submit" id="bonus-submit-btn" onclick="submitBonus()">Guardar pronósticos bonus →</button>
   </div>
 
 </div><!-- /main -->
@@ -418,7 +451,12 @@ async function loadFromSupabase() {
   if (!useSupabase) return;
   try {
     const { data: pData } = await sb.from('participants').select('*');
-    if (pData) participants = pData;
+    if (pData) {
+      participants = pData;
+      // Load own bonus from server if available
+      const me = pData.find(p => p.name === localStorage.getItem('qm26_name'));
+      if (me?.bonus) { myBonus = me.bonus; localStorage.setItem('qm26_bonus', JSON.stringify(myBonus)); }
+    }
     const { data: rData } = await sb.from('results').select('*');
     if (rData) {
       realResults = {};
@@ -430,7 +468,10 @@ async function loadFromSupabase() {
 async function saveParticipantToSupabase(name, picks) {
   if (!useSupabase) return;
   try {
-    await sb.from('participants').upsert({ name, picks, updated_at: new Date().toISOString() }, { onConflict: 'name' });
+    await sb.from('participants').upsert({
+      name, picks, bonus: myBonus,
+      updated_at: new Date().toISOString()
+    }, { onConflict: 'name' });
   } catch(e) { console.log('Save error:', e); }
 }
 
@@ -610,6 +651,7 @@ function getTotalPts(p) {
       if (pts !== null) t += pts;
     }
   });
+  t += getBonusPts(p);
   return t;
 }
 
@@ -639,13 +681,27 @@ function renderMatches() {
         <span class="odd odd-ou">O/U ${m.ou}</span>
       </div>` : '';
       const scoreCtrl = started
-        ? `<div class="score-ctrl"><span class="sc-locked">${ph}</span><span class="dash-sep">—</span><span class="sc-locked">${pa}</span></div>`
-        : `<div class="score-ctrl">
-            <button class="sc-btn" onclick="adj(${m.id},'home',-1)">−</button>
-            <input class="sc-num" type="number" min="0" max="20" id="ph_${m.id}" value="${ph}" onchange="sp(${m.id},'home',this.value)"/>
+        ? `<div class="score-ctrl-wrap">
+            <div class="team-score-block">
+              <span class="sc-locked">${ph}</span>
+            </div>
             <span class="dash-sep">—</span>
-            <input class="sc-num" type="number" min="0" max="20" id="pa_${m.id}" value="${pa}" onchange="sp(${m.id},'away',this.value)"/>
-            <button class="sc-btn" onclick="adj(${m.id},'away',1)">+</button>
+            <div class="team-score-block">
+              <span class="sc-locked">${pa}</span>
+            </div>
+           </div>`
+        : `<div class="score-ctrl-wrap">
+            <div class="team-score-block">
+              <button class="sc-btn" onclick="adj(${m.id},'home',-1)">−</button>
+              <input class="sc-num" type="number" min="0" max="20" id="ph_${m.id}" value="${ph}" onchange="sp(${m.id},'home',this.value)"/>
+              <button class="sc-btn" onclick="adj(${m.id},'home',1)">+</button>
+            </div>
+            <span class="dash-sep">—</span>
+            <div class="team-score-block">
+              <button class="sc-btn" onclick="adj(${m.id},'away',-1)">−</button>
+              <input class="sc-num" type="number" min="0" max="20" id="pa_${m.id}" value="${pa}" onchange="sp(${m.id},'away',this.value)"/>
+              <button class="sc-btn" onclick="adj(${m.id},'away',1)">+</button>
+            </div>
            </div>`;
       html += `<div class="card">
         <div class="match-meta">
@@ -680,6 +736,7 @@ function sp(id, side, v) {
 async function submitPicks() {
   const name = document.getElementById('pname').value.trim();
   if (!name) { showToast('Escribe tu nombre primero'); return; }
+  localStorage.setItem('qm26_name', name);
   const btn = document.getElementById('submit-btn');
   btn.disabled = true; btn.textContent = 'Publicando...';
   MATCHES.forEach(m => {
@@ -827,6 +884,7 @@ function showTab(t, btn) {
   btn.classList.add('active');
   if (t === 'ranking') renderRanking();
   if (t === 'results') { renderResults(); updateApiStatus(); }
+  if (t === 'bonus') renderBonus();
 }
 
 /* ─── TOAST ─── */
@@ -835,6 +893,310 @@ function showToast(msg) {
   el.textContent = msg; el.classList.add('show');
   setTimeout(() => el.classList.remove('show'), 2600);
 }
+
+/* ─── BONUS DATA ─── */
+// 48 equipos oficiales clasificados al Mundial 2026
+const ALL_TEAMS = [
+  'Alemania','Arabia Saudita','Argelia','Argentina','Australia','Austria',
+  'Bélgica','Bosnia y Herz.','Brasil','Cabo Verde','Canadá','Chequia',
+  'Colombia','Corea del Sur','Costa de Marfil','Croacia','Curazao',
+  'Ecuador','Egipto','Escocia','España','Francia','Ghana','Haití',
+  'Holanda','Inglaterra','Irán','Irak','Japón','Jordania','Marruecos',
+  'México','Noruega','Nueva Zelanda','Panamá','Paraguay','Portugal',
+  'Qatar','R.D. Congo','Senegal','Sudáfrica','Suecia','Suiza',
+  'Turquía','Túnez','Uruguay','USA','Uzbekistán'
+];
+
+// Jugadores con odds reales de DraftKings/FanDuel (junio 2026)
+// Formato: "Nombre (País) odds"
+const ALL_PLAYERS_BOOT = [
+  // ── TOP FAVORITES (Bota de Oro) ──
+  'Kylian Mbappé (Francia) +600','Harry Kane (Inglaterra) +700',
+  'Erling Haaland (Noruega) +1400','Lionel Messi (Argentina) +1600',
+  'Mikel Oyarzabal (España) +1800','Lamine Yamal (España) +2000',
+  'Cristiano Ronaldo (Portugal) +2500','Vinicius Jr. (Brasil) +3000',
+  'Raphinha (Brasil) +3000','Lautaro Martínez (Argentina) +3500',
+  'Julián Álvarez (Argentina) +3500','Ousmane Dembélé (Francia) +3500',
+  'Cody Gakpo (Holanda) +4000','Ferran Torres (España) +4000',
+  'Bukayo Saka (Inglaterra) +4000','Memphis Depay (Holanda) +4000',
+  'Phil Foden (Inglaterra) +4500','Bruno Fernandes (Portugal) +5000',
+  'Luis Díaz (Colombia) +5000','Nick Woltemade (Alemania) +5000',
+  'Romelu Lukaku (Bélgica) +5000','Matheus Cunha (Brasil) +5500',
+  'Álvaro Morata (España) +5500','Christian Pulisic (USA) +6000',
+  'Darwin Núñez (Uruguay) +6000','Jonathan David (Canadá) +6000',
+  'Mohamed Salah (Egipto) +6000','Rodrygo (Brasil) +6500',
+  'Randal Kolo Muani (Francia) +6500','Richarlison (Brasil) +7000',
+  'Scott McTominay (Escocia) +7000','Son Heung-min (Corea del Sur) +7000',
+  'Jude Bellingham (Inglaterra) +7500','Florian Wirtz (Alemania) +7500',
+  'Jamal Musiala (Alemania) +7500','Pedri (España) +8000',
+  'Gavi (España) +8000','Rodri (España) +8000',
+  'Federico Valverde (Uruguay) +8000','Alexis Mac Allister (Argentina) +8500',
+  'Antoine Griezmann (Francia) +8500','Marcus Thuram (Francia) +9000',
+  'Kevin De Bruyne (Bélgica) +9000','Achraf Hakimi (Marruecos) +9000',
+  'Takefusa Kubo (Japón) +9500','Hirving Lozano (México) +10000',
+  'Santiago Giménez (México) +10000','Edson Álvarez (México) +12000',
+  'Raúl Jiménez (México) +12000','Alphonso Davies (Canadá) +12000',
+  'Bernardo Silva (Portugal) +12000','Rafael Leão (Portugal) +12000',
+  'Theo Hernández (Francia) +12000','Xavi Simons (Holanda) +12000',
+  'Weston McKennie (USA) +15000','Tyler Adams (USA) +15000',
+  'Sadio Mané (Senegal) +15000','Sofyan Amrabat (Marruecos) +15000',
+  'Rúben Dias (Portugal) +15000','Leroy Sané (Alemania) +15000',
+  'Albert Rusnák (USA) +18000','Brian White (USA) +20000',
+  'Djordje Mihailovic (USA) +20000','Diego Rossi (USA) +20000',
+  'Hugo Cuypers (Bélgica) +20000','Germán Berterame (México) +25000',
+];
+
+// Lista limpia sin odds para Balón de Oro / Joven / búsqueda general
+const ALL_PLAYERS = ALL_PLAYERS_BOOT.map(p => p.replace(/ \+\d+$/, ''))
+  .concat([
+    'Emiliano Martínez (Argentina)','Neymar Jr. (Brasil)',
+    'Cyle Larin (Canadá)','Hany Mukhtar (USA)',
+    'Mateo Kovacic (Croacia)','Luka Modric (Croacia)',
+    'Ivan Perisic (Croacia)','Dominik Livaković (Croacia)',
+    'Sofiane Feghouli (Argelia)','Riyad Mahrez (Argelia)',
+    'Islam Slimani (Argelia)','Youcef Atal (Argelia)',
+    'Ilkay Gündogan (Alemania)','Thomas Müller (Alemania)',
+    'Robert Andrich (Alemania)','Joshua Kimmich (Alemania)',
+    'Nicolas Tagliafico (Argentina)','Lisandro Martínez (Argentina)',
+    'Enzo Fernández (Argentina)','Thiago Almada (Argentina)',
+    'Mathew Leckie (Australia)','Mitchell Duke (Australia)',
+    'Ryan Gravenberch (Holanda)','Jeremie Frimpong (Holanda)',
+    'Simon Adingra (Costa de Marfil)','Nicolas Pépé (Costa de Marfil)',
+    'Cyrille Bayala (Curazao)','Rangelo Janga (Curazao)',
+    'Piero Hincapié (Ecuador)','Kendry Páez (Ecuador)',
+    'Enner Valencia (Ecuador)','Moisés Caicedo (Ecuador)',
+    'Mostafa Mohamed (Egipto)','Omar Marmoush (Egipto)',
+    'Lawrence Shankland (Escocia)','Andy Robertson (Escocia)',
+    'Ansu Fati (España)','Nico Williams (España)',
+    'William Saliba (Francia)','Adrien Rabiot (Francia)',
+    'Jordan Ayew (Ghana)','Mohammed Kudus (Ghana)',
+    'Moise Kean (Haití)','Frantzdy Pierrot (Haití)',
+    'Sardar Azmoun (Irán)','Mehdi Taremi (Irán)',
+    'Amir Ali Sadeghi (Irán)','Ali Karimi (Irán)',
+    'Moanes Daboubi (Irak)','Amjad Attwan (Irak)',
+    'Ayase Ueda (Japón)','Daichi Kamada (Japón)',
+    'Ritsu Doan (Japón)','Wataru Endo (Japón)',
+    'Musa Al-Taamari (Jordania)','Yazan Al-Naimat (Jordania)',
+    'Hakim Ziyech (Marruecos)','Youssef En-Nesyri (Marruecos)',
+    'Anssumane Fati (España)','Yassine Bounou (Marruecos)',
+    'Johan Vásquez (México)','Héctor Herrera (México)',
+    'Omar Govea (México)','Uriel Antuna (México)',
+    'José Juan Macías (México)','Guillermo Martínez (México)',
+    'Sander Berge (Noruega)','Martin Odegaard (Noruega)',
+    'Marcus Rashford (Inglaterra)','Ollie Watkins (Inglaterra)',
+    'Cole Palmer (Inglaterra)','Jack Grealish (Inglaterra)',
+    'Clayton Lewis (Nueva Zelanda)','Ryan Thomas (Nueva Zelanda)',
+    'Rolando Blackburn (Panamá)','Adalberto Carrasquilla (Panamá)',
+    'Julio Enciso (Paraguay)','Gustavo Gómez (Paraguay)',
+    'Diogo Jota (Portugal)','Pedro Neto (Portugal)',
+    'Franck Kessié (Costa de Marfil)',
+    'Yacine Adli (Argelia)','Ismael Bennacer (Argelia)',
+    'Almoez Ali (Qatar)','Akram Afif (Qatar)',
+    'Cheikhou Kouyaté (Senegal)','Ismaila Sarr (Senegal)',
+    'Bafana Bafana (Sudáfrica)','Percy Tau (Sudáfrica)',
+    'Dejan Kulusevski (Suecia)','Alexander Isak (Suecia)',
+    'Viktor Gyökeres (Suecia)','Emil Forsberg (Suecia)',
+    'Granit Xhaka (Suiza)','Breel Embolo (Suiza)',
+    'Xherdan Shaqiri (Suiza)','Arda Güler (Turquía)',
+    'Hakan Çalhanoğlu (Turquía)','Kerem Aktürkoğlu (Turquía)',
+    'Wahbi Khazri (Túnez)','Youssef Msakni (Túnez)',
+    'Hamza Rafia (Túnez)','Anis Ben Slimane (Túnez)',
+    'Federico Valverde (Uruguay)','Rodrigo Bentancur (Uruguay)',
+    'José María Giménez (Uruguay)','Nicolás De la Cruz (Uruguay)',
+    'Eldor Shomurodov (Uzbekistán)','Otabek Shukurov (Uzbekistán)',
+    'Jaloliddin Masharipov (Uzbekistán)',
+  ]);
+
+// Porteros con odds reales (Golden Glove / Guante de Oro)
+const ALL_GOALKEEPERS = [
+  'Emiliano Martínez (Argentina) +350','Unai Simón (España) +500',
+  'Alisson Becker (Brasil) +500','Mike Maignan (Francia) +600',
+  'Jordan Pickford (Inglaterra) +700','Thibaut Courtois (Bélgica) +900',
+  'Manuel Neuer (Alemania) +1100','Yann Sommer (Suiza) +1200',
+  'Diogo Costa (Portugal) +1400','Dominik Livaković (Croacia) +1600',
+  'Memo Ochoa (México) +2000','David Raya (España) +2000',
+  'Marc-André ter Stegen (Alemania) +2200','Ederson (Brasil) +2500',
+  'Matt Turner (USA) +3000','Maxime Crépeau (Canadá) +3000',
+  'Yassine Bounou (Marruecos) +3500','Yvon Mvogo (Suiza) +4000',
+  'Ronwen Williams (Sudáfrica) +5000','Zack Steffen (USA) +5000',
+];
+
+// Jóvenes Sub-21 favoritos (born on/after June 1, 2005)
+const ALL_YOUNG = [
+  'Lamine Yamal (España) +250','Florian Wirtz (Alemania) +400',
+  'Xavi Simons (Holanda) +500','Kendry Páez (Ecuador) +600',
+  'Arda Güler (Turquía) +700','Joao Neves (Portugal) +800',
+  'Warren Zaïre-Emery (Francia) +900','Rayan Cherki (Francia) +1000',
+  'Désiré Doué (Francia) +1200','Cole Palmer (Inglaterra) +1400',
+  'Gavi (España) +1500','Pedri (España) +1500',
+  'Mathys Tel (Francia) +1800','Patrick Dorgu (Dinamarca) +2000',
+  'Yamal Hernández (España) +2000','Mathieu Flamini Jr. (Francia) +2500',
+  'Sávio (Brasil) +2500','Estevao Willian (Brasil) +3000',
+  'Julio Enciso (Paraguay) +3000','Nico Williams (España) +3500',
+];
+
+const BONUS_QUESTIONS = [
+  { id:'b1',  label:'🥇 Campeón', opts: ALL_TEAMS, pts:2, hint:'48 equipos oficiales' },
+  { id:'b2',  label:'🥈 Subcampeón', opts: ALL_TEAMS, pts:2, hint:'48 equipos oficiales' },
+  { id:'b3',  label:'🥉 Tercer lugar', opts: ALL_TEAMS, pts:2, hint:'48 equipos oficiales' },
+  { id:'b4',  label:'⚽ Bota de Oro — Goleador del torneo', opts: ALL_PLAYERS_BOOT, pts:2, hint:'Odds FanDuel/DraftKings jun 2026' },
+  { id:'b5',  label:'🌟 Balón de Oro — Mejor jugador', opts: ALL_PLAYERS, pts:2, hint:'+150 jugadores de los 48 equipos' },
+  { id:'b6',  label:'🧤 Guante de Oro — Mejor portero', opts: ALL_GOALKEEPERS, pts:2, hint:'Odds William Hill/DraftKings jun 2026' },
+  { id:'b7',  label:'🌱 Mejor Jugador Joven (sub-21)', opts: ALL_YOUNG, pts:2, hint:'Odds FanDuel jun 2026' },
+  { id:'b8',  label:'🏆 Ganador Grupo A', opts: ALL_TEAMS, pts:2, hint:'México · Corea del Sur · Chequia · Sudáfrica' },
+  { id:'b9',  label:'🏆 Ganador Grupo B', opts: ALL_TEAMS, pts:2, hint:'Canadá · Qatar · Suiza · Bosnia y Herz.' },
+  { id:'b10', label:'🏆 Ganador Grupo C', opts: ALL_TEAMS, pts:2, hint:'Brasil · Escocia · Marruecos · Haití' },
+  { id:'b11', label:'🏆 Ganador Grupo D', opts: ALL_TEAMS, pts:2, hint:'USA · Australia · Turquía · Paraguay' },
+  { id:'b12', label:'🏆 Ganador Grupo E', opts: ALL_TEAMS, pts:2, hint:'Alemania · Costa de Marfil · Ecuador · Curazao' },
+  { id:'b13', label:'🏆 Ganador Grupo F', opts: ALL_TEAMS, pts:2, hint:'Holanda · Japón · Suecia · Túnez' },
+  { id:'b14', label:'🏆 Ganador Grupo G', opts: ALL_TEAMS, pts:2, hint:'Bélgica · Egipto · Irán · Nueva Zelanda' },
+  { id:'b15', label:'🏆 Ganador Grupo H', opts: ALL_TEAMS, pts:2, hint:'España · Arabia Saudita · Uruguay · Cabo Verde' },
+  { id:'b16', label:'🏆 Ganador Grupo I', opts: ALL_TEAMS, pts:2, hint:'Francia · Senegal · Noruega · Irak' },
+  { id:'b17', label:'🏆 Ganador Grupo J', opts: ALL_TEAMS, pts:2, hint:'Argentina · Argelia · Austria · Jordania' },
+  { id:'b18', label:'🏆 Ganador Grupo K', opts: ALL_TEAMS, pts:2, hint:'Portugal · Colombia · Uzbekistán · R.D. Congo' },
+  { id:'b19', label:'🏆 Ganador Grupo L', opts: ALL_TEAMS, pts:2, hint:'Inglaterra · Ghana · Panamá · Croacia' },
+];
+
+let myBonus = {};
+let bonusResults = {};
+let openDropdown = null;
+
+try { myBonus = JSON.parse(localStorage.getItem('qm26_bonus') || '{}'); } catch(e) {}
+try { bonusResults = JSON.parse(localStorage.getItem('qm26_br') || '{}'); } catch(e) {}
+
+/* ─── RENDER BONUS ─── */
+function buildDropItems(opts, selected, qid) {
+  return opts.map(o => {
+    const safe = o.replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'&quot;');
+    const isOdds = / \+\d+$/.test(o);
+    const display = isOdds
+      ? o.replace(/ (\+\d+)$/, ' <span style="color:#4dff91;font-size:11px;font-weight:600">$1</span>')
+      : o;
+    return `<div class="dropdown-item${o===selected?' selected':''}" onclick="selectBonus('${qid}','${safe}')">${display}</div>`;
+  }).join('');
+}
+
+function renderBonus() {
+  let html = '';
+  BONUS_QUESTIONS.forEach(q => {
+    const selected = myBonus[q.id] || '';
+    const displaySelected = selected.replace(/ (\+\d+)$/, ' <span style="color:#4dff91;font-size:11px;font-weight:600">$1</span>');
+    html += `
+    <div class="bonus-card">
+      <div class="bonus-title">${q.label} <span class="bonus-pts-badge">+${q.pts} pts</span></div>
+      ${q.hint ? `<div style="font-size:11px;color:var(--muted);margin-bottom:8px">📋 ${q.hint}</div>` : ''}
+      <div class="bonus-row">
+        <div class="search-wrap" id="wrap_${q.id}">
+          <i class="ti ti-search search-icon" aria-hidden="true"></i>
+          <input class="bonus-search" id="search_${q.id}"
+            placeholder="Buscar jugador o equipo..."
+            value="${selected.replace(/ \+\d+$/,'')}"
+            autocomplete="off"
+            oninput="filterBonus('${q.id}')"
+            onfocus="openDrop('${q.id}')"
+          />
+          <div class="dropdown-list" id="drop_${q.id}">
+            ${buildDropItems(q.opts, selected, q.id)}
+          </div>
+          ${selected ? `<div class="selected-tag">${displaySelected} <button onclick="clearBonus('${q.id}')">×</button></div>` : ''}
+        </div>
+      </div>
+    </div>`;
+  });
+  document.getElementById('bonus-list').innerHTML = html;
+}
+
+function openDrop(id) {
+  if (openDropdown && openDropdown !== id) closeDrop(openDropdown);
+  openDropdown = id;
+  document.getElementById('drop_' + id)?.classList.add('open');
+}
+
+function closeDrop(id) {
+  document.getElementById('drop_' + id)?.classList.remove('open');
+  if (openDropdown === id) openDropdown = null;
+}
+
+function filterBonus(id) {
+  const q = BONUS_QUESTIONS.find(x => x.id === id);
+  const val = document.getElementById('search_' + id)?.value.toLowerCase() || '';
+  const drop = document.getElementById('drop_' + id);
+  if (!drop) return;
+  drop.classList.add('open');
+  openDropdown = id;
+  const filtered = q.opts.filter(o => o.toLowerCase().includes(val));
+  drop.innerHTML = filtered.length
+    ? buildDropItems(filtered, myBonus[id] || '', id)
+    : '<div style="padding:10px 12px;font-size:12px;color:var(--muted)">Sin resultados</div>';
+}
+
+function selectBonus(id, value) {
+  myBonus[id] = value;
+  localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
+  closeDrop(id);
+  const q = BONUS_QUESTIONS.find(x => x.id === id);
+  const wrap = document.getElementById('wrap_' + id);
+  if (!wrap) return;
+  const displayVal = value.replace(/ (\+\d+)$/, ' <span style="color:#4dff91;font-size:11px;font-weight:600">$1</span>');
+  const cleanVal = value.replace(/ \+\d+$/, '');
+  wrap.innerHTML = `
+    <i class="ti ti-search search-icon" aria-hidden="true"></i>
+    <input class="bonus-search" id="search_${id}"
+      placeholder="Buscar jugador o equipo..."
+      value="${cleanVal}"
+      autocomplete="off"
+      oninput="filterBonus('${id}')"
+      onfocus="openDrop('${id}')"
+    />
+    <div class="dropdown-list" id="drop_${id}">
+      ${buildDropItems(q.opts, value, id)}
+    </div>
+    <div class="selected-tag">${displayVal} <button onclick="clearBonus('${id}')">×</button></div>`;
+}
+
+function clearBonus(id) {
+  delete myBonus[id];
+  localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
+  renderBonus();
+}
+
+async function submitBonus() {
+  const name = document.getElementById('pname')?.value.trim() || localStorage.getItem('qm26_name') || '';
+  if (!name) { showToast('Primero escribe tu nombre en "Mis picks"'); return; }
+  const btn = document.getElementById('bonus-submit-btn');
+  btn.disabled = true; btn.textContent = 'Guardando...';
+  // Save bonus alongside participant picks
+  if (useSupabase) {
+    try {
+      await sb.from('participants').upsert({
+        name,
+        bonus: myBonus,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'name' });
+    } catch(e) { console.log('Bonus save error:', e); }
+  } else {
+    const idx = participants.findIndex(p => p.name === name);
+    if (idx >= 0) participants[idx].bonus = myBonus;
+    localStorage.setItem('qm26_p', JSON.stringify(participants));
+  }
+  localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
+  showToast('✅ Bonus guardados!');
+  btn.disabled = false; btn.textContent = 'Guardar pronósticos bonus →';
+}
+
+function getBonusPts(p) {
+  let t = 0;
+  if (!p.bonus) return 0;
+  BONUS_QUESTIONS.forEach(q => {
+    if (bonusResults[q.id] && p.bonus[q.id] === bonusResults[q.id]) t += q.pts;
+  });
+  return t;
+}
+
+// Close dropdown when clicking outside
+document.addEventListener('click', e => {
+  if (openDropdown && !e.target.closest('.search-wrap')) closeDrop(openDropdown);
+});
 
 /* ─── API KEY MANAGEMENT ─── */
 function saveApiKey() {
