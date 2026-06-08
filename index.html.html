@@ -553,6 +553,13 @@ let myPicks = {};
 let participants = [];
 let realResults = {};
 
+/* ─── ADMIN CONFIG ─── */
+// Cambia esta contraseña por la tuya antes de subir a GitHub
+const ADMIN_PASSWORD = 'Mundial2026Admin';
+let adminUnlocked = false;
+let paidMap = {};
+try { paidMap = JSON.parse(localStorage.getItem('qm26_paid') || '{}'); } catch(e) {}
+
 /* ─── LOCAL STORAGE HELPERS ─── */
 function loadLocal() {
   try { participants = JSON.parse(localStorage.getItem('qm26_p') || '[]'); } catch(e){}
@@ -797,6 +804,16 @@ function oddsClass(o) {
   if (n <= 200) return 'odd odd-mid';
   return 'odd odd-dog';
 }
+function getBonusPts(p) {
+  let t = 0;
+  if (!p.bonus) return 0;
+  if (typeof BONUS_QUESTIONS === 'undefined') return 0;
+  BONUS_QUESTIONS.forEach(q => {
+    if (bonusResults[q.id] && p.bonus[q.id] === bonusResults[q.id]) t += q.pts;
+  });
+  return t;
+}
+
 function getTotalPts(p) {
   let t = 0;
   MATCHES.forEach(m => {
@@ -1341,14 +1358,7 @@ async function submitBonus() {
   btn.disabled = false; btn.textContent = 'Guardar pronósticos bonus →';
 }
 
-function getBonusPts(p) {
-  let t = 0;
-  if (!p.bonus) return 0;
-  BONUS_QUESTIONS.forEach(q => {
-    if (bonusResults[q.id] && p.bonus[q.id] === bonusResults[q.id]) t += q.pts;
-  });
-  return t;
-}
+// getBonusPts moved above getTotalPts
 
 // Close dropdown when clicking outside
 document.addEventListener('click', e => {
@@ -1384,12 +1394,7 @@ async function manualRefresh() {
   renderRanking();
 }
 
-/* ─── ADMIN CONFIG ─── */
-// Cambia esta contraseña por la tuya
-const ADMIN_PASSWORD = 'Mundial2026Admin';
-let adminUnlocked = false;
-let paidMap = {};
-try { paidMap = JSON.parse(localStorage.getItem('qm26_paid') || '{}'); } catch(e) {}
+// Admin config moved above — see below
 
 /* ─── ADMIN AUTH ─── */
 function checkAdminPin() {
