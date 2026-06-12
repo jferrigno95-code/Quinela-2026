@@ -48,6 +48,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .filters{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}
 .fbtn{padding:5px 11px;font-size:12px;border-radius:20px;border:1px solid var(--border);background:var(--dark3);color:var(--muted);cursor:pointer;transition:all .15s}
 .fbtn.active{background:rgba(255,214,0,.12);color:var(--gold);border-color:rgba(255,214,0,.4)}
+.fbtn.past{opacity:.6}
 .nrow label{display:block;font-size:12px;color:var(--muted);margin-bottom:5px;text-transform:uppercase;letter-spacing:.08em}
 .nrow input{width:100%;padding:10px 14px;background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);font-size:15px;font-family:'DM Sans',sans-serif;margin-bottom:14px}
 .nrow input:focus{outline:none;border-color:rgba(255,214,0,.5)}
@@ -223,6 +224,52 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .bv-bar{height:100%;background:linear-gradient(90deg,rgba(255,214,0,.7),rgba(255,214,0,.3));border-radius:3px;transition:width .4s}
 .bv-most-picked{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,214,0,.1);color:var(--gold);display:inline-block;margin-top:3px}
 
+/* PIZARRA */
+.pz-filter{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:12px}
+.pz-fb{padding:5px 11px;font-size:12px;border-radius:20px;border:1px solid var(--border);background:var(--dark3);color:var(--muted);cursor:pointer;transition:all .15s}
+.pz-fb.active{background:rgba(255,214,0,.12);color:var(--gold);border-color:rgba(255,214,0,.4)}
+.pz-match-card{background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;overflow:hidden;cursor:pointer;transition:border-color .2s}
+.pz-match-card:hover{border-color:rgba(255,214,0,.3)}
+.pz-match-card.open{border-color:rgba(255,214,0,.5)}
+.pz-match-header{padding:11px 14px;display:flex;align-items:center;gap:10px}
+.pz-teams{flex:1;font-size:14px;font-weight:600}
+.pz-teams .vs{font-size:11px;color:var(--muted);font-weight:400;margin:0 4px}
+.pz-real{font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:2px;color:var(--gold);min-width:52px;text-align:center}
+.pz-real.live{color:#ff4444}
+.pz-real.ns{font-family:'DM Sans',sans-serif;font-size:11px;color:var(--muted);letter-spacing:0}
+.pz-status-dot{width:8px;height:8px;border-radius:50%;background:var(--border);flex-shrink:0}
+.pz-status-dot.live{background:#ff4444;animation:pulse 1.4s ease-in-out infinite}
+.pz-status-dot.ft{background:#4dff91}
+.pz-status-dot.ns{background:var(--border)}
+.pz-chevron{font-size:12px;color:var(--muted);transition:transform .2s;margin-left:4px}
+.pz-chevron.open{transform:rotate(180deg)}
+.pz-detail{display:none;border-top:1px solid var(--border)}
+.pz-detail.open{display:block}
+.pz-picks-wrap{overflow-x:auto}
+.pz-picks-table{width:100%;border-collapse:collapse;font-size:12px}
+.pz-picks-table th{padding:8px 10px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em;white-space:nowrap;background:var(--dark4)}
+.pz-picks-table th:first-child{text-align:left;min-width:100px}
+.pz-picks-table td{padding:8px 10px;border-bottom:1px solid var(--border);text-align:center;vertical-align:middle}
+.pz-picks-table td:first-child{text-align:left;font-weight:500;font-size:11px}
+.pz-picks-table tr:last-child td{border-bottom:none}
+.pz-score{font-size:14px;font-weight:700;display:inline-block;padding:3px 8px;border-radius:6px;min-width:36px}
+.pz-score.exact{background:rgba(0,200,83,.2);color:#4dff91}
+.pz-score.correct{background:rgba(255,214,0,.15);color:var(--gold)}
+.pz-score.wrong{background:rgba(255,23,68,.1);color:#ff6b8a}
+.pz-score.pending{background:rgba(255,255,255,.05);color:var(--muted)}
+.pz-score.ns{color:var(--text);background:rgba(255,255,255,.06)}
+.pz-pts{font-size:11px;font-weight:600;padding:2px 6px;border-radius:10px;display:block;margin-top:2px}
+.pz-pts.exact{color:#4dff91}
+.pz-pts.correct{color:var(--gold)}
+.pz-pts.wrong{color:#ff6b8a}
+.pz-no-pick{color:var(--border);font-size:18px}
+.pz-summary{display:flex;gap:8px;padding:10px 14px;background:rgba(255,255,255,.02);flex-wrap:wrap}
+.pz-sum-item{font-size:11px;color:var(--muted)}
+.pz-sum-item strong{color:var(--text)}
+.pz-real-row{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 14px;background:rgba(255,214,0,.04);border-bottom:1px solid var(--border)}
+.pz-real-score{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--gold)}
+.pz-real-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
+
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:2px}
 </style>
@@ -236,6 +283,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 <div class="tabs">
   <button class="tab active" onclick="showTab('picks',this)">Mis picks</button>
   <button class="tab" onclick="showTab('scores',this)">🔴 En Vivo</button>
+  <button class="tab" onclick="showTab('pizarra',this)">📋 Pizarra</button>
   <button class="tab" onclick="showTab('grupos',this)">📊 Grupos</button>
   <button class="tab" onclick="showTab('bonus',this)">⭐ Mis Bonus</button>
   <button class="tab" onclick="showTab('bonusview',this)">👀 Bonus todos</button>
@@ -254,9 +302,21 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
         onblur="loadMyPicks(this.value)"/>
     </div>
     <div class="banner">🔒 Picks se bloquean al inicio de cada partido. Los picks ajenos solo son visibles cuando el partido comenzó.</div>
-    <div class="filters" id="phase-filters"></div>
+    <div class="filters" id="day-filters"></div>
     <div id="match-list"></div>
     <button class="bsub" id="submit-btn" onclick="submitPicks()">Publicar mis pronósticos →</button>
+  </div>
+
+  <div id="tab-pizarra" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+      <div>
+        <p style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text)">Pizarra de picks</p>
+        <p style="font-size:11px;color:var(--muted);margin-top:1px">Toca un partido para ver qué pronosticó cada quien</p>
+      </div>
+      <button onclick="pzRefresh()" style="padding:5px 11px;font-size:12px;border:1px solid var(--border);border-radius:6px;background:var(--dark4);color:var(--text);cursor:pointer">↻</button>
+    </div>
+    <div class="pz-filter" id="pz-filters"></div>
+    <div id="pz-list"></div>
   </div>
 
   <div id="tab-grupos" class="section">
@@ -558,7 +618,8 @@ const MATCH_MAP={'Mexico_South Africa':1,'Korea Republic_Czechia':2,'Canada_Bosn
    STATE — todas las variables de estado juntas
    ════════════════════════════════════════ */
 let sb = null, useSupabase = false;
-let activePhase = 'Grupo A';
+// Days with matches for the filter
+let activeDay = 'hoy'; // 'hoy', 'todos', or a date string 'YYYY-MM-DD'
 let myPicks = {}, participants = [], realResults = {}, bonusResults = {};
 let myBonus = {}, openDrop = null;
 let adminUnlocked = false, paidMap = {};
@@ -697,57 +758,122 @@ function oddsClass(o){
 /* ════════════════════════════════════════
    RENDER MATCHES
    ════════════════════════════════════════ */
-function renderFilters(){
-  document.getElementById('phase-filters').innerHTML=PHASES.map(p=>
-    `<button class="fbtn${p===activePhase?' active':''}" onclick="setPhase('${p}')">${p}</button>`
-  ).join('');
+function getMatchDays(){
+  // Get unique dates that have matches, sorted
+  const dates = [...new Set(MATCHES.filter(m=>m.h!=='TBD').map(m=>m.dt))].sort();
+  return dates;
 }
-function setPhase(p){ activePhase=p; renderFilters(); renderMatches(); }
+
+function renderFilters(){
+  const now = new Date();
+  const todayMx = new Date(now.toLocaleString('en-US',{timeZone:'America/Mexico_City'})).toISOString().slice(0,10);
+  const dates = getMatchDays();
+
+  // Build day buttons: Hoy, Mañana, then dates
+  let btns = `<button class="fbtn${activeDay==='todos'?' active':''}" onclick="setDay('todos')">Todos</button>`;
+
+  dates.forEach(d=>{
+    const isTodayD = d===todayMx;
+    const isTomorrow = d===new Date(new Date(todayMx).getTime()+86400000).toISOString().slice(0,10);
+    const isPast = d < todayMx;
+    const dateObj = new Date(d+'T12:00:00Z');
+    let label;
+    if(isTodayD) label='🔴 Hoy';
+    else if(isTomorrow) label='Mañana';
+    else label=dateObj.toLocaleDateString('es-MX',{weekday:'short',day:'numeric',month:'short',timeZone:'America/Mexico_City'});
+
+    // Auto-select today on first load
+    if(isTodayD && activeDay==='hoy') activeDay=d;
+
+    btns+=`<button class="fbtn${activeDay===d?' active':''}${isPast?' past':''}" onclick="setDay('${d}')">${label}</button>`;
+  });
+
+  document.getElementById('day-filters').innerHTML=btns;
+}
+
+function setDay(d){
+  activeDay=d;
+  renderFilters();
+  renderMatches();
+}
 
 function renderMatches(){
-  const list=activePhase==='Todos'?MATCHES:MATCHES.filter(m=>m.ph===activePhase);
-  const groups={};
-  list.forEach(m=>{ if(!groups[m.ph])groups[m.ph]=[]; groups[m.ph].push(m); });
+  const todayMx2 = new Date(new Date().toLocaleString('en-US',{timeZone:'America/Mexico_City'})).toISOString().slice(0,10);
+  if(activeDay==='hoy') activeDay=todayMx2;
+  const list = activeDay==='todos'
+    ? MATCHES
+    : MATCHES.filter(m=>m.dt===activeDay);
+
   let html='';
-  for(const g in groups){
-    html+=`<div class="glabel">${g}</div>`;
-    groups[g].forEach(m=>{
-      const started=isStarted(m.dt,m.tm);
-      const ph=myPicks[m.id]?.home??0, pa=myPicks[m.id]?.away??0;
-      const oddsHtml=m.odds?`<div class="odds-strip">
-        <span class="${oddsClass(m.odds.h)}">${m.h} ${m.odds.h}</span>
-        <span class="odd odd-mid">Empate ${m.odds.d}</span>
-        <span class="${oddsClass(m.odds.a)}">${m.a} ${m.odds.a}</span>
-        <span class="odd odd-ou">O/U ${m.ou}</span>
-      </div>`:'';
-      const ctrl=started
-        ?`<div class="scwrap"><span class="slocked">${ph}</span><span class="dsep">—</span><span class="slocked">${pa}</span></div>`
-        :`<div class="scwrap">
-            <div class="tblock">
-              <button class="sbtn" onclick="adj(${m.id},'home',-1)">−</button>
-              <input class="snum" type="number" min="0" max="20" id="ph_${m.id}" value="${ph}" onchange="sp(${m.id},'home',this.value)"/>
-              <button class="sbtn" onclick="adj(${m.id},'home',1)">+</button>
-            </div>
-            <span class="dsep">—</span>
-            <div class="tblock">
-              <button class="sbtn" onclick="adj(${m.id},'away',-1)">−</button>
-              <input class="snum" type="number" min="0" max="20" id="pa_${m.id}" value="${pa}" onchange="sp(${m.id},'away',this.value)"/>
-              <button class="sbtn" onclick="adj(${m.id},'away',1)">+</button>
-            </div>
-          </div>`;
-      html+=`<div class="card">
-        <div class="mmeta">
-          <span class="mdate">${fmtMexDate(m.dt)} ${fmtMexTime(m.dt,m.tm)} CDT ${started?'<span class="stag">⏱ Iniciado</span>':''}</span>
-          <span class="mvenue"><span class="city">${m.ci}</span> · ${m.st}</span>
+
+  if(activeDay==='todos'){
+    // Group by phase when showing all
+    const groups={};
+    list.forEach(m=>{ if(!groups[m.ph])groups[m.ph]=[]; groups[m.ph].push(m); });
+    for(const g in groups){
+      html+=`<div class="glabel">${g}</div>`;
+      groups[g].forEach(m=>{ html+=buildMatchCard(m); });
+    }
+  } else {
+    // Day view: sort by time, no group headers, show phase as small badge
+    const sorted=[...list].sort((a,b)=>a.tm.localeCompare(b.tm));
+    if(!sorted.length){
+      html='<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Sin partidos este día.</div>';
+    } else {
+      sorted.forEach(m=>{ html+=buildMatchCard(m,true); });
+    }
+  }
+
+  document.getElementById('match-list').innerHTML=html;
+}
+
+function buildMatchCard(m, showPhase=false){
+  const started=isStarted(m.dt,m.tm);
+  const ph=myPicks[m.id]?.home??0, pa=myPicks[m.id]?.away??0;
+  const real=realResults[m.id];
+  const oddsHtml=m.odds?`<div class="odds-strip">
+    <span class="${oddsClass(m.odds.h)}">${m.h} ${m.odds.h}</span>
+    <span class="odd odd-mid">Empate ${m.odds.d}</span>
+    <span class="${oddsClass(m.odds.a)}">${m.a} ${m.odds.a}</span>
+    <span class="odd odd-ou">O/U ${m.ou}</span>
+  </div>`:'';
+  const ctrl=started
+    ?`<div class="scwrap"><span class="slocked">${ph}</span><span class="dsep">—</span><span class="slocked">${pa}</span></div>`
+    :`<div class="scwrap">
+        <div class="tblock">
+          <button class="sbtn" onclick="adj(${m.id},'home',-1)">−</button>
+          <input class="snum" type="number" min="0" max="20" id="ph_${m.id}" value="${ph}" onchange="sp(${m.id},'home',this.value)"/>
+          <button class="sbtn" onclick="adj(${m.id},'home',1)">+</button>
         </div>
-        ${oddsHtml}
-        <div class="trow">
-          <span class="tname">${m.h}</span>${ctrl}<span class="tname r">${m.a}</span>
+        <span class="dsep">—</span>
+        <div class="tblock">
+          <button class="sbtn" onclick="adj(${m.id},'away',-1)">−</button>
+          <input class="snum" type="number" min="0" max="20" id="pa_${m.id}" value="${pa}" onchange="sp(${m.id},'away',this.value)"/>
+          <button class="sbtn" onclick="adj(${m.id},'away',1)">+</button>
         </div>
       </div>`;
-    });
-  }
-  document.getElementById('match-list').innerHTML=html;
+
+  // Show real score next to pick if available
+  const realTag = real && started
+    ? `<span style="font-size:11px;color:var(--muted);margin-left:8px">Real: ${real.home}-${real.away}</span>`
+    : '';
+
+  // Phase badge in day view
+  const phaseBadge = showPhase
+    ? `<span style="font-size:10px;padding:1px 6px;background:rgba(255,214,0,.1);color:var(--gold);border-radius:10px;margin-left:6px">${m.ph}</span>`
+    : '';
+
+  return `<div class="card">
+    <div class="mmeta">
+      <span class="mdate">${fmtMexTime(m.dt,m.tm)} CDT ${phaseBadge} ${started?'<span class="stag">⏱ Iniciado</span>':''}</span>
+      <span class="mvenue"><span class="city">${m.ci}</span> · ${m.st}</span>
+    </div>
+    ${oddsHtml}
+    <div class="trow">
+      <span class="tname">${m.h}</span>${ctrl}<span class="tname r">${m.a}</span>
+    </div>
+    ${realTag?`<div style="text-align:center;margin-top:4px">${realTag}</div>`:''}
+  </div>`;
 }
 
 function adj(id,side,d){
@@ -1030,37 +1156,47 @@ async function autoFetchResults(){
   }
 
   try{
-    // API-Sports: FIFA World Cup 2026 = league 1, season 2026
-    const resp = await fetch(
-      'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
-      { headers: { 'x-apisports-key': API_SPORTS_KEY } }
-    );
-    if(!resp.ok) throw new Error(`API-Sports error ${resp.status}`);
-    const data = await resp.json();
+    // Call our own Vercel serverless function /api/scores
+    // This avoids CORS — the server calls api-sports.io, not the browser
+    const resp = await fetch('/api/scores');
 
-    if(data.errors && Object.keys(data.errors).length){
-      console.warn('API-Sports errors:', data.errors);
-      updateApiStatus('error'); return;
+    if(!resp.ok){
+      const err = await resp.json().catch(()=>({}));
+      updateApiStatus('error', err.error || `Error ${resp.status}`);
+      return;
+    }
+
+    const data = await resp.json();
+    if(data.error){
+      const msg = data.error;
+      if(msg.includes('token')||msg.includes('key')||msg.includes('auth')){
+        updateApiStatus('error','API Key inválida — verifica en api-sports.io');
+      } else if(msg.includes('limit')||msg.includes('rate')){
+        updateApiStatus('error','Límite diario alcanzado (100/día gratis)');
+      } else {
+        updateApiStatus('error', msg.slice(0,80));
+      }
+      return;
+    }
+
+    const fixtures = data.fixtures || [];
+    if(!fixtures.length){
+      updateApiStatus('nodata');
+      return;
     }
 
     let updated = 0;
-    for(const fix of (data.response||[])){
-      const status = fix.fixture?.status?.short;
-      if(status!=='FT'&&status!=='AET'&&status!=='PEN'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
+    for(const fix of fixtures){
+      const status = fix.status;
+      if(status!=='FT'&&status!=='AET'&&status!=='PEN'&&
+         status!=='1H'&&status!=='2H'&&status!=='HT'&&status!=='ET') continue;
 
-      const homeApi = fix.teams?.home?.name||'';
-      const awayApi = fix.teams?.away?.name||'';
-      const ourId = findMatchId(homeApi, awayApi);
+      const ourId = findMatchId(fix.home||'', fix.away||'');
+      if(!ourId){ console.log('⚠ Unmatched:', fix.home, 'vs', fix.away); continue; }
 
-      if(!ourId){
-        console.log('⚠ No match for:', homeApi, 'vs', awayApi);
-        continue;
-      }
-
-      const hs = fix.goals?.home ?? fix.score?.halftime?.home ?? 0;
-      const as_ = fix.goals?.away ?? fix.score?.halftime?.away ?? 0;
+      const hs = fix.goalsHome ?? 0;
+      const as_ = fix.goalsAway ?? 0;
       if(hs===null||as_===null) continue;
-
       if(realResults[ourId]?.home===hs && realResults[ourId]?.away===as_) continue;
 
       realResults[ourId] = {home:hs, away:as_};
@@ -1072,29 +1208,36 @@ async function autoFetchResults(){
     if(updated>0){
       toast(`${updated} resultado${updated>1?'s':''} actualizado${updated>1?'s':''} ✓`);
       renderResults(); renderRanking(); renderGroups();
-      const at=document.querySelector('.tab.active')?.dataset?.tab;
-      if(at==='scores') renderScores();
+      const activeTab=document.querySelector('.tab.active')?.textContent||'';
+      if(activeTab.includes('En Vivo')) renderScores();
+      if(activeTab.includes('Pizarra')) renderPizarra();
     }
     updateApiStatus('ok');
   }catch(e){
-    console.warn('API-Sports error:', e.message);
-    updateApiStatus('error');
+    console.warn('fetch /api/scores error:', e.message);
+    updateApiStatus('error', 'Error de conexión — revisa tu Vercel');
   }
 }
 
-function updateApiStatus(state){
+function updateApiStatus(state, msg){
   const el=document.getElementById('api-status');
   const panel=document.getElementById('api-key-panel');
   if(!el)return;
   const hasKey = API_SPORTS_KEY && API_SPORTS_KEY.length>10;
   if(state==='error'){
-    el.innerHTML='<span style="color:#ff6b8a">⚠ Error en API — verifica tu clave en api-sports.io</span>';
-  } else if(state==='ok'||hasKey){
+    el.innerHTML=`<span style="color:#ff6b8a">⚠ ${msg||'Error en API — verifica tu clave en api-sports.io'}</span>`;
+    if(panel) panel.style.display='block';
+  } else if(state==='nodata'){
+    el.innerHTML='<span style="color:var(--gold)">⚠ API conectada pero WC 2026 no disponible en tu plan — ingresa resultados manualmente</span>';
+  } else if(state==='ok'){
     el.innerHTML='<span style="color:#4dff91">✓ API activa · api-sports.io · actualiza cada 5 min</span>';
+    if(panel) panel.style.display='none';
   } else {
-    el.innerHTML='<span style="color:var(--muted)">Sin API key — ingresa resultados manualmente o activa api-sports.io</span>';
+    el.innerHTML=hasKey
+      ?'<span style="color:var(--gold)">⏳ Conectando a api-sports.io...</span>'
+      :'<span style="color:var(--muted)">Sin API key — ingresa resultados manualmente</span>';
+    if(panel) panel.style.display=hasKey?'none':'block';
   }
-  if(panel) panel.style.display=hasKey?'none':'block';
   const upd=document.getElementById('last-upd');
   if(upd) upd.innerHTML=`<span class="ldot"></span> Actualizado: ${new Date().toLocaleTimeString('es-MX',{timeZone:'America/Mexico_City'})} CDT`;
 }
@@ -1201,6 +1344,193 @@ function renderBonusView(){
   });
 
   el.innerHTML=html;
+}
+
+/* ════════════════════════════════════════
+   PIZARRA DE PICKS
+   ════════════════════════════════════════ */
+let pzPhase = 'Grupo A';
+let pzOpen = null; // currently open match id
+
+function renderPizarra(){
+  // Phase filter buttons
+  const phases = ['Todos','Grupo A','Grupo B','Grupo C','Grupo D','Grupo E','Grupo F',
+    'Grupo G','Grupo H','Grupo I','Grupo J','Grupo K','Grupo L',
+    'Ronda de 32','Octavos de final','Cuartos de final','Semifinal','Tercer lugar','Final'];
+  document.getElementById('pz-filters').innerHTML = phases.map(p=>
+    `<button class="pz-fb${p===pzPhase?' active':''}" onclick="setPzPhase('${p}')">${p}</button>`
+  ).join('');
+
+  const list = pzPhase==='Todos' ? MATCHES : MATCHES.filter(m=>m.ph===pzPhase);
+  let html='';
+  list.forEach(m=>{
+    const real = realResults[m.id];
+    const st = getMatchStatus(m);
+    const isLive = st.status==='LIVE'||st.status==='HT';
+    const isFT = st.status==='FT' || !!real;
+    const isOpen = pzOpen===m.id;
+
+    // Header score display
+    let realDisp='', dotCls='ns';
+    if(isFT && real){
+      realDisp=`${real.home}–${real.away}`;
+      dotCls='ft';
+    } else if(isLive){
+      realDisp=`${st.label}`;
+      dotCls='live';
+    } else {
+      realDisp=fmtMexTime(m.dt,m.tm);
+      dotCls='ns';
+    }
+
+    // Count picks for this match
+    const pickCount = participants.filter(p=>p.picks&&p.picks[m.id]).length;
+    const canSee = isStarted(m.dt,m.tm); // only show others' picks after match starts
+
+    html+=`<div class="pz-match-card${isOpen?' open':''}" id="pzcard_${m.id}">
+      <div class="pz-match-header" onclick="togglePz(${m.id})">
+        <div class="pz-status-dot ${dotCls}"></div>
+        <div class="pz-teams">
+          ${m.h} <span class="vs">vs</span> ${m.a}
+          <div style="font-size:10px;color:var(--muted);font-weight:400;margin-top:1px">
+            📍 ${m.ci} · ${fmtMexDate(m.dt)}
+            ${canSee?`<span style="margin-left:6px;color:var(--gold)">${pickCount} picks</span>`:'<span style="margin-left:6px">🔒 Bloqueado</span>'}
+          </div>
+        </div>
+        <div class="pz-real ${isLive?'live':isFT?'':' ns'}">${realDisp}</div>
+        <div class="pz-chevron${isOpen?' open':''}">▾</div>
+      </div>
+      <div class="pz-detail${isOpen?' open':''}" id="pzdet_${m.id}">
+        ${isOpen ? buildPzDetail(m) : ''}
+      </div>
+    </div>`;
+  });
+
+  document.getElementById('pz-list').innerHTML = html || '<p style="color:var(--muted);font-size:13px;text-align:center;padding:30px">Sin partidos en este filtro.</p>';
+}
+
+function buildPzDetail(m){
+  const real = realResults[m.id];
+  const canSee = isStarted(m.dt,m.tm);
+  const st = getMatchStatus(m);
+  const isLive = st.status==='LIVE'||st.status==='HT';
+  const isFT = st.status==='FT' || !!real;
+
+  // Sort participants by pts for this match (best first)
+  const sorted = [...participants].sort((a,b)=>{
+    const pa=a.picks&&a.picks[m.id]&&real?calcPts(a.picks[m.id],real):-1;
+    const pb=b.picks&&b.picks[m.id]&&real?calcPts(b.picks[m.id],real):-1;
+    return pb-pa;
+  });
+
+  if(!canSee){
+    return `<div style="padding:20px;text-align:center;color:var(--muted);font-size:13px">
+      🔒 Los picks se revelan cuando inicia el partido<br>
+      <span style="font-size:11px">${fmtMexDate(m.dt)} ${fmtMexTime(m.dt,m.tm)} CDT</span>
+    </div>`;
+  }
+
+  if(!participants.length){
+    return '<div style="padding:16px;text-align:center;color:var(--muted);font-size:13px">Sin participantes aún.</div>';
+  }
+
+  // Stats for this match
+  const withPick = sorted.filter(p=>p.picks&&p.picks[m.id]);
+  const exact = withPick.filter(p=>real&&calcPts(p.picks[m.id],real)===5).length;
+  const correct = withPick.filter(p=>real&&calcPts(p.picks[m.id],real)>0&&calcPts(p.picks[m.id],real)<5).length;
+  const wrong = withPick.filter(p=>real&&calcPts(p.picks[m.id],real)===0).length;
+
+  // Most popular pick
+  const pickCounts={};
+  withPick.forEach(p=>{ const k=p.picks[m.id].home+'-'+p.picks[m.id].away; pickCounts[k]=(pickCounts[k]||0)+1; });
+  const popular=Object.entries(pickCounts).sort((a,b)=>b[1]-a[1])[0];
+
+  // Real score row
+  let realRow='';
+  if(isFT && real){
+    const hWin=real.home>real.away, aWin=real.away>real.home;
+    realRow=`<div class="pz-real-row">
+      <span class="pz-real-label">Resultado real</span>
+      <span style="font-weight:600;font-size:14px;color:${hWin?'#4dff91':'var(--muted)'}">${m.h}</span>
+      <span class="pz-real-score">${real.home} — ${real.away}</span>
+      <span style="font-weight:600;font-size:14px;color:${aWin?'#4dff91':'var(--muted)'}">${m.a}</span>
+    </div>`;
+  } else if(isLive){
+    realRow=`<div class="pz-real-row">
+      <span class="ldot"></span>
+      <span style="font-size:13px;color:#ff4444;font-weight:600">EN VIVO ${st.label}</span>
+    </div>`;
+  }
+
+  // Summary bar
+  const summaryRow = (isFT&&real) ? `<div class="pz-summary">
+    <span class="pz-sum-item">✅ <strong>${exact}</strong> exactos</span>
+    <span class="pz-sum-item">🎯 <strong>${correct}</strong> correctos</span>
+    <span class="pz-sum-item">❌ <strong>${wrong}</strong> incorrectos</span>
+    ${popular?`<span class="pz-sum-item">🔥 Pick popular: <strong>${popular[0]}</strong> (${popular[1]})</span>`:''}
+  </div>` : '';
+
+  // Picks table
+  let rows='';
+  sorted.forEach((p,i)=>{
+    const pick = p.picks&&p.picks[m.id];
+    if(!pick){ 
+      rows+=`<tr>
+        <td>${i+1}. ${p.name}</td>
+        <td colspan="2"><span class="pz-no-pick">—</span></td>
+      </tr>`; 
+      return; 
+    }
+    const pickStr=`${pick.home}–${pick.away}`;
+    const d = real ? calcDetail(pick,real) : null;
+    let cls='ns', pts='';
+    if(d){
+      if(d.pts===5){cls='exact';pts=`<span class="pz-pts exact">+5 ⚽</span>`;}
+      else if(d.pts>0){cls='correct';pts=`<span class="pz-pts correct">+${d.pts}</span>`;}
+      else{cls='wrong';pts=`<span class="pz-pts wrong">0</span>`;}
+    }
+    rows+=`<tr>
+      <td><span style="color:var(--muted);margin-right:4px">${i+1}.</span>${p.name}</td>
+      <td><span class="pz-score ${cls}">${pickStr}</span>${pts}</td>
+      <td style="font-size:11px;color:var(--muted)">${d&&d.pts>0?d.label:''}</td>
+    </tr>`;
+  });
+
+  return `${realRow}${summaryRow}
+    <div class="pz-picks-wrap">
+      <table class="pz-picks-table">
+        <thead><tr>
+          <th style="text-align:left">Participante</th>
+          <th>Pronóstico</th>
+          <th>Detalle</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>`;
+}
+
+function togglePz(id){
+  if(pzOpen===id){
+    pzOpen=null;
+  } else {
+    pzOpen=id;
+  }
+  renderPizarra();
+  // Scroll to opened card
+  if(pzOpen){
+    setTimeout(()=>{
+      const el=document.getElementById('pzcard_'+pzOpen);
+      if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'});
+    },100);
+  }
+}
+
+function setPzPhase(p){
+  pzPhase=p; pzOpen=null; renderPizarra();
+}
+
+function pzRefresh(){
+  renderPizarra();
 }
 
 /* ════════════════════════════════════════
@@ -1767,6 +2097,7 @@ function showTab(t,btn){
   btn.classList.add('active');
   if(t==='ranking'){renderRanking();}
   if(t==='grupos'){renderGroups();}
+  if(t==='pizarra'){renderPizarra();}
   if(t==='bonusview'){renderBonusView();}
   if(t==='scores'){
     // Auto-select today if there are games today
@@ -1841,6 +2172,7 @@ async function init(){
         if(activeTab&&activeTab.includes('Marcadores')) renderResults();
         if(activeTab&&activeTab.includes('En Vivo')) renderScores();
         if(activeTab&&activeTab.includes('Grupos')) renderGroups();
+        if(activeTab&&activeTab.includes('Pizarra')) renderPizarra();
       })
       .subscribe();
     console.log('✅ Supabase Realtime subscribed');
