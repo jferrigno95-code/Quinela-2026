@@ -179,6 +179,50 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .sf-btn.active{background:rgba(255,23,68,.15);color:#ff6b8a;border-color:rgba(255,23,68,.4)}
 .no-games{text-align:center;padding:40px 20px;color:var(--muted);font-size:13px}
 
+/* GRUPOS */
+.group-card{background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden}
+.group-card-title{background:rgba(255,214,0,.08);border-bottom:1px solid var(--border);padding:10px 14px;font-family:'Bebas Neue',sans-serif;font-size:15px;letter-spacing:2px;color:var(--gold);display:flex;justify-content:space-between;align-items:center}
+.group-table{width:100%;border-collapse:collapse;font-size:13px}
+.group-table th{text-align:center;padding:6px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.group-table th:first-child{text-align:left;padding-left:12px}
+.group-table td{padding:8px 8px;border-bottom:1px solid var(--border);text-align:center;font-size:12px}
+.group-table td:first-child{text-align:left;padding-left:12px;font-weight:500;font-size:13px}
+.group-table tr:last-child td{border-bottom:none}
+.group-table tr.qualified td:first-child{border-left:3px solid #4dff91}
+.group-table tr.playoff td:first-child{border-left:3px solid var(--gold)}
+.gf-ga{color:var(--muted);font-size:11px}
+.group-matches{padding:10px 12px;border-top:1px solid var(--border);display:none}
+.group-matches.open{display:block}
+.gmatch-row{display:flex;align-items:center;gap:6px;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.gmatch-row:last-child{border-bottom:none}
+.gmatch-team{flex:1;font-weight:500}
+.gmatch-team.r{text-align:right}
+.gmatch-score{min-width:50px;text-align:center;font-weight:700;font-size:13px}
+.gmatch-score.live{color:#ff4444}
+.gmatch-score.ns{color:var(--muted);font-weight:400;font-size:11px}
+.toggle-matches{background:none;border:none;color:var(--muted);font-size:12px;cursor:pointer;padding:0}
+
+/* BONUS COMPARISON */
+.bv-table{width:100%;border-collapse:collapse;font-size:12px}
+.bv-table th{padding:7px 8px;border-bottom:1px solid var(--border);color:var(--muted);font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.bv-table th.sticky{position:sticky;left:0;background:var(--dark2);z-index:2}
+.bv-table td{padding:7px 8px;border-bottom:1px solid var(--border);white-space:nowrap;vertical-align:middle}
+.bv-table td.sticky{position:sticky;left:0;background:var(--dark3);z-index:1;font-weight:500;font-size:11px;color:var(--muted);max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.bv-table tr:last-child td{border-bottom:none}
+.bv-pick{font-size:12px;font-weight:500;padding:3px 7px;border-radius:6px;display:inline-block}
+.bv-pick.correct{background:rgba(0,200,83,.15);color:#4dff91}
+.bv-pick.wrong{background:rgba(255,23,68,.1);color:#ff6b8a}
+.bv-pick.pending{background:rgba(255,255,255,.05);color:var(--muted)}
+.bv-scroll{overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)}
+.bv-section{margin-bottom:20px}
+.bv-section-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold);margin-bottom:8px}
+.bv-summary-row{display:flex;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);gap:10px}
+.bv-summary-name{flex:1;font-size:13px;font-weight:500}
+.bv-summary-pts{font-size:12px;font-weight:600;color:var(--gold)}
+.bv-bar-wrap{flex:2;height:14px;background:var(--dark4);border-radius:3px;overflow:hidden}
+.bv-bar{height:100%;background:linear-gradient(90deg,rgba(255,214,0,.7),rgba(255,214,0,.3));border-radius:3px;transition:width .4s}
+.bv-most-picked{font-size:11px;padding:3px 9px;border-radius:20px;background:rgba(255,214,0,.1);color:var(--gold);display:inline-block;margin-top:3px}
+
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:2px}
 </style>
@@ -192,7 +236,9 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 <div class="tabs">
   <button class="tab active" onclick="showTab('picks',this)">Mis picks</button>
   <button class="tab" onclick="showTab('scores',this)">🔴 En Vivo</button>
-  <button class="tab" onclick="showTab('bonus',this)">⭐ Bonus</button>
+  <button class="tab" onclick="showTab('grupos',this)">📊 Grupos</button>
+  <button class="tab" onclick="showTab('bonus',this)">⭐ Mis Bonus</button>
+  <button class="tab" onclick="showTab('bonusview',this)">👀 Bonus todos</button>
   <button class="tab" onclick="showTab('ranking',this)">🏆 Leaderboard</button>
   <button class="tab" onclick="showTab('results',this)">Marcadores</button>
   <button class="tab" onclick="showTab('scoring',this)">Puntuación</button>
@@ -213,6 +259,14 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
     <button class="bsub" id="submit-btn" onclick="submitPicks()">Publicar mis pronósticos →</button>
   </div>
 
+  <div id="tab-grupos" class="section">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+      <p style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text)">Tabla de Grupos</p>
+      <span style="font-size:11px;color:var(--muted)"><span style="color:#4dff91">▮</span> Clasificado <span style="color:var(--gold);margin-left:6px">▮</span> Repechaje</span>
+    </div>
+    <div id="groups-content"></div>
+  </div>
+
   <div id="tab-scores" class="section">
     <div class="scores-header">
       <span class="scores-title">Scores En Vivo</span>
@@ -228,10 +282,18 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
     <div id="scores-list"></div>
   </div>
 
+  <div id="tab-bonusview" class="section">
+    <p style="font-family:'Bebas Neue',sans-serif;font-size:18px;letter-spacing:2px;color:var(--text);margin-bottom:4px">Picks Bonus — Todos</p>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Visibles solo después de que inicia el torneo.</p>
+    <div id="bonusview-content"></div>
+  </div>
+
   <div id="tab-bonus" class="section">
-    <div class="banner">⭐ Pronostica premios especiales. Cada acierto vale <strong>2 puntos extra</strong>.</div>
+    <div class="banner" id="bonus-banner">⭐ Pronostica premios especiales. Cada acierto vale <strong>2 puntos extra</strong>. Se bloquean al inicio del torneo (11 jun).</div>
     <div id="bonus-list"></div>
-    <button class="bsub" onclick="submitBonus()">Guardar pronósticos bonus →</button>
+    <div id="bonus-submit-wrap">
+      <button class="bsub" onclick="submitBonus()">Guardar pronósticos bonus →</button>
+    </div>
   </div>
 
   <div id="tab-ranking" class="section">
@@ -244,10 +306,10 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   <div id="tab-results" class="section">
     <div class="banner"><span class="ldot"></span>Resultados automáticos vía football-data.org cada 5 min.</div>
     <div id="api-key-panel" style="background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:12px;display:none">
-      <p style="font-size:13px;font-weight:500;margin-bottom:4px">🔑 API Key de football-data.org</p>
-      <p style="font-size:12px;color:var(--muted);margin-bottom:9px">Pega tu clave para activar resultados automáticos.</p>
+      <p style="font-size:13px;font-weight:500;margin-bottom:4px">🔑 API Key de api-sports.io</p>
+      <p style="font-size:12px;color:var(--muted);margin-bottom:9px">Regístrate gratis en <strong>api-sports.io</strong> → Dashboard → copia tu API Key. Soporta Mundial 2026 (100 llamadas/día gratis).</p>
       <div style="display:flex;gap:8px">
-        <input type="text" id="fd-key-input" placeholder="Pega tu API key..." style="flex:1;padding:8px 12px;background:var(--dark4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px"/>
+        <input type="text" id="fd-key-input" placeholder="Pega tu API key de api-sports.io..." style="flex:1;padding:8px 12px;background:var(--dark4);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:monospace;font-size:12px"/>
         <button onclick="saveApiKey()" style="padding:8px 14px;background:var(--gold);color:#000;border:none;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer">Activar</button>
       </div>
     </div>
@@ -798,20 +860,84 @@ function toggleDetail(btn,name){
   const p=participants.find(x=>x.name===name);
   if(!p){el.innerHTML='';return;}
   const started=MATCHES.filter(m=>isStarted(m.dt,m.tm));
-  if(!started.length){el.innerHTML='<p style="font-size:12px;color:var(--muted);padding:8px 0">Picks visibles al inicio de cada partido.</p>';return;}
-  let html='';
+  if(!started.length){el.innerHTML='<p style="font-size:12px;color:var(--muted);padding:8px 0">Picks visibles cuando los partidos inicien.</p>';return;}
+
+  // Stats summary
+  let exact=0,correct=0,wrong=0,pending=0,totalPts=0;
+  started.forEach(m=>{
+    const pick=p.picks&&p.picks[m.id];
+    const real=realResults[m.id];
+    if(!pick){pending++;return;}
+    if(!real){pending++;return;}
+    const d=calcDetail(pick,real);
+    if(d.pts===5)exact++;
+    else if(d.pts>0)correct++;
+    else wrong++;
+    totalPts+=d.pts;
+  });
+
+  let html=`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:10px 0 12px">
+    <div style="background:rgba(0,200,83,.1);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:#4dff91">${exact}</div>
+      <div style="font-size:10px;color:var(--muted)">Exactos</div>
+    </div>
+    <div style="background:rgba(255,214,0,.1);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:var(--gold)">${correct}</div>
+      <div style="font-size:10px;color:var(--muted)">Correctos</div>
+    </div>
+    <div style="background:rgba(255,23,68,.1);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:#ff6b8a">${wrong}</div>
+      <div style="font-size:10px;color:var(--muted)">Incorrectos</div>
+    </div>
+    <div style="background:rgba(255,255,255,.05);border-radius:8px;padding:8px;text-align:center">
+      <div style="font-size:18px;font-weight:700;color:var(--text)">${pending}</div>
+      <div style="font-size:10px;color:var(--muted)">Pendientes</div>
+    </div>
+  </div>`;
+
+  // Picks grid
   started.forEach(m=>{
     const pick=p.picks&&p.picks[m.id];
     const real=realResults[m.id];
     const det=pick&&real?calcDetail(pick,real):null;
-    let badge='<span class="rtag rpe">pendiente</span>';
+    let bg='rgba(255,255,255,.03)',border='var(--border)',ptsBadge='';
     if(det){
-      if(det.pts===5)badge='<span class="rtag rex">exacto +5</span>';
-      else if(det.pts>0)badge=`<span class="rtag rok">${det.label}</span>`;
-      else badge='<span class="rtag rwr">incorrecto</span>';
+      if(det.pts===5){bg='rgba(0,200,83,.08)';border='rgba(0,200,83,.3)';ptsBadge=`<span class="rtag rex">+5</span>`;}
+      else if(det.pts>0){bg='rgba(255,214,0,.07)';border='rgba(255,214,0,.25)';ptsBadge=`<span class="rtag rok">+${det.pts}</span>`;}
+      else{bg='rgba(255,23,68,.06)';border='rgba(255,23,68,.25)';ptsBadge=`<span class="rtag rwr">0</span>`;}
+    } else {
+      ptsBadge=`<span class="rtag rpe">—</span>`;
     }
-    html+=`<div class="prow"><span class="pmatch">${m.h} vs ${m.a}</span><span class="pscore">${pick?pick.home+'-'+pick.away:'?'}</span>${badge}</div>`;
+    html+=`<div style="background:${bg};border:1px solid ${border};border-radius:8px;padding:8px 10px;margin-bottom:5px">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:11px;color:var(--muted);flex:1">${m.h} <span style="color:var(--muted)">vs</span> ${m.a}</span>
+        ${ptsBadge}
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-top:5px">
+        <div style="display:flex;align-items:center;gap:8px">
+          <span style="font-size:15px;font-weight:700;color:var(--text)">${pick?pick.home+' — '+pick.away:'?'}</span>
+          ${real?`<span style="font-size:11px;color:var(--muted)">Real: ${real.home}-${real.away}</span>`:''}
+        </div>
+      </div>
+    </div>`;
   });
+
+  // Bonus section
+  if(isBonusLocked() && p.bonus && Object.keys(p.bonus).length>0){
+    html+=`<p style="font-size:11px;font-weight:500;color:var(--gold);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.06em">⭐ Bonus picks</p>`;
+    BONUS_Q.forEach(q=>{
+      const pick=p.bonus[q.id];
+      if(!pick)return;
+      const real=bonusResults[q.id]||'';
+      const isOk=real&&pick.replace(/ \+\d+$/,'')===real.replace(/ \+\d+$/,'');
+      html+=`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px">
+        <span style="color:var(--muted);flex:1">${q.label}</span>
+        <span style="font-weight:600;margin:0 8px;color:${isOk?'#4dff91':'var(--text)'}">${pick.replace(/ \+\d+$/,'')}</span>
+        ${isOk?'<span class="rtag rex">+2</span>':real?'<span class="rtag rwr">0</span>':'<span class="rtag rpe">—</span>'}
+      </div>`;
+    });
+  }
+
   el.innerHTML=html;
 }
 
@@ -863,53 +989,120 @@ async function saveMatchResult(id){
 /* ════════════════════════════════════════
    AUTO-FETCH RESULTS
    ════════════════════════════════════════ */
-async function autoFetchResults(){
-  if(FOOTBALL_API_KEY==='TU_API_KEY_AQUI'){
-    await loadFromSupabase();
-    updateApiStatus(); return;
-  }
-  try{
-    const resp=await fetch('https://api.football-data.org/v4/competitions/WC/matches?season=2026',
-      {headers:{'X-Auth-Token':FOOTBALL_API_KEY}});
-    if(!resp.ok) throw new Error(resp.status);
-    const data=await resp.json();
-    let updated=0;
-    for(const m of data.matches){
-      if(m.status!=='FINISHED'&&m.status!=='IN_PLAY'&&m.status!=='PAUSED') continue;
-      const key=`${m.homeTeam?.name}_${m.awayTeam?.name}`;
-      const ourId=MATCH_MAP[key];
-      if(!ourId) continue;
-      const hs=m.score?.fullTime?.home,as=m.score?.fullTime?.away;
-      if(hs==null||as==null) continue;
-      if(realResults[ourId]?.home===hs&&realResults[ourId]?.away===as) continue;
-      realResults[ourId]={home:hs,away:as};
-      if(useSupabase) await saveResult(ourId,hs,as);
-      else localStorage.setItem('qm26_r',JSON.stringify(realResults));
-      updated++;
-    }
-    if(updated>0){ toast(`${updated} resultado${updated>1?'s':''} actualizado${updated>1?'s':''} ✓`); renderResults(); renderRanking(); }
-  }catch(e){
-    console.warn('API error:',e);
-    await loadFromSupabase();
-  }
-  updateApiStatus();
+/* ─ API-Sports.io (free, supports WC 2026)
+   Get key at: api-sports.io → register → Dashboard → API Key
+   Endpoint: https://v3.football.api-sports.io
+   WC 2026 league_id = 1 (FIFA World Cup) ─ */
+const API_SPORTS_KEY = localStorage.getItem('api_sports_key') || '84cb97940887a614942a00e77344f6ab';
+
+// Manual team name map for API-Sports response
+const API_SPORTS_MAP = {
+  'Mexico':'México','South Africa':'Sudáfrica','Korea Republic':'Corea del Sur',
+  'Czech Republic':'Chequia','Czechia':'Chequia','Canada':'Canadá',
+  'Bosnia and Herzegovina':'Bosnia y Herz.','USA':'USA','Paraguay':'Paraguay',
+  'Qatar':'Qatar','Switzerland':'Suiza','Brazil':'Brasil','Morocco':'Marruecos',
+  'Haiti':'Haití','Scotland':'Escocia','Australia':'Australia','Turkey':'Turquía',
+  'Germany':'Alemania',"Ivory Coast":"Costa de Marfil",'Ecuador':'Ecuador',
+  'Netherlands':'Holanda','Japan':'Japón','Sweden':'Suecia','Tunisia':'Túnez',
+  'Spain':'España','Cape Verde':'Cabo Verde','Belgium':'Bélgica','Egypt':'Egipto',
+  'Saudi Arabia':'Arabia Saudita','Uruguay':'Uruguay','Iran':'Irán',
+  'New Zealand':'Nueva Zelanda','France':'Francia','Senegal':'Senegal',
+  'Iraq':'Irak','Norway':'Noruega','Argentina':'Argentina','Algeria':'Argelia',
+  'Austria':'Austria','Jordan':'Jordania','Portugal':'Portugal',
+  'DR Congo':'R.D. Congo','England':'Inglaterra','Croatia':'Croacia',
+  'Ghana':'Ghana','Panama':'Panamá','Uzbekistan':'Uzbekistán',
+  'Colombia':'Colombia','Serbia':'Serbia',
+};
+
+function findMatchId(homeApi, awayApi){
+  const h = API_SPORTS_MAP[homeApi] || homeApi;
+  const a = API_SPORTS_MAP[awayApi] || awayApi;
+  const m = MATCHES.find(x => x.h===h && x.a===a);
+  return m?.id || null;
 }
 
-function updateApiStatus(){
+async function autoFetchResults(){
+  await loadFromSupabase();
+
+  if(!API_SPORTS_KEY){
+    updateApiStatus();
+    return;
+  }
+
+  try{
+    // API-Sports: FIFA World Cup 2026 = league 1, season 2026
+    const resp = await fetch(
+      'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
+      { headers: { 'x-apisports-key': API_SPORTS_KEY } }
+    );
+    if(!resp.ok) throw new Error(`API-Sports error ${resp.status}`);
+    const data = await resp.json();
+
+    if(data.errors && Object.keys(data.errors).length){
+      console.warn('API-Sports errors:', data.errors);
+      updateApiStatus('error'); return;
+    }
+
+    let updated = 0;
+    for(const fix of (data.response||[])){
+      const status = fix.fixture?.status?.short;
+      if(status!=='FT'&&status!=='AET'&&status!=='PEN'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
+
+      const homeApi = fix.teams?.home?.name||'';
+      const awayApi = fix.teams?.away?.name||'';
+      const ourId = findMatchId(homeApi, awayApi);
+
+      if(!ourId){
+        console.log('⚠ No match for:', homeApi, 'vs', awayApi);
+        continue;
+      }
+
+      const hs = fix.goals?.home ?? fix.score?.halftime?.home ?? 0;
+      const as_ = fix.goals?.away ?? fix.score?.halftime?.away ?? 0;
+      if(hs===null||as_===null) continue;
+
+      if(realResults[ourId]?.home===hs && realResults[ourId]?.away===as_) continue;
+
+      realResults[ourId] = {home:hs, away:as_};
+      if(useSupabase) await saveResult(ourId, hs, as_);
+      else localStorage.setItem('qm26_r', JSON.stringify(realResults));
+      updated++;
+    }
+
+    if(updated>0){
+      toast(`${updated} resultado${updated>1?'s':''} actualizado${updated>1?'s':''} ✓`);
+      renderResults(); renderRanking(); renderGroups();
+      const at=document.querySelector('.tab.active')?.dataset?.tab;
+      if(at==='scores') renderScores();
+    }
+    updateApiStatus('ok');
+  }catch(e){
+    console.warn('API-Sports error:', e.message);
+    updateApiStatus('error');
+  }
+}
+
+function updateApiStatus(state){
   const el=document.getElementById('api-status');
   const panel=document.getElementById('api-key-panel');
   if(!el)return;
-  const active=FOOTBALL_API_KEY!=='TU_API_KEY_AQUI'&&FOOTBALL_API_KEY.length>10;
-  el.innerHTML=active?'<span style="color:#4dff91">✓ API activa — actualización automática cada 5 min</span>':'<span style="color:var(--muted)">Sin API key — ingresa resultados manualmente</span>';
-  if(panel)panel.style.display=active?'none':'block';
+  const hasKey = API_SPORTS_KEY && API_SPORTS_KEY.length>10;
+  if(state==='error'){
+    el.innerHTML='<span style="color:#ff6b8a">⚠ Error en API — verifica tu clave en api-sports.io</span>';
+  } else if(state==='ok'||hasKey){
+    el.innerHTML='<span style="color:#4dff91">✓ API activa · api-sports.io · actualiza cada 5 min</span>';
+  } else {
+    el.innerHTML='<span style="color:var(--muted)">Sin API key — ingresa resultados manualmente o activa api-sports.io</span>';
+  }
+  if(panel) panel.style.display=hasKey?'none':'block';
   const upd=document.getElementById('last-upd');
-  if(upd)upd.textContent=`Actualizado: ${new Date().toLocaleTimeString('es-MX')}`;
+  if(upd) upd.innerHTML=`<span class="ldot"></span> Actualizado: ${new Date().toLocaleTimeString('es-MX',{timeZone:'America/Mexico_City'})} CDT`;
 }
 
 function saveApiKey(){
   const k=document.getElementById('fd-key-input')?.value.trim();
   if(!k||k.length<10){toast('Clave inválida');return;}
-  localStorage.setItem('fd_key',k);
+  localStorage.setItem('api_sports_key',k);
   location.reload();
 }
 async function manualRefresh(){
@@ -917,6 +1110,207 @@ async function manualRefresh(){
   await autoFetchResults();
   renderResults();
   renderRanking();
+}
+
+/* ════════════════════════════════════════
+   BONUS VIEW — todos los picks comparados
+   ════════════════════════════════════════ */
+function renderBonusView(){
+  const locked = isBonusLocked();
+  const el = document.getElementById('bonusview-content');
+  if(!el) return;
+
+  if(!locked){
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">🔒 Los picks bonus se revelan cuando inicia el torneo (11 jun).</div>';
+    return;
+  }
+
+  const withBonus = participants.filter(p=>p.bonus&&Object.keys(p.bonus).length>0);
+  if(!withBonus.length){
+    el.innerHTML='<div style="text-align:center;padding:40px 20px;color:var(--muted);font-size:13px">Nadie ha registrado picks bonus aún.</div>';
+    return;
+  }
+
+  // Sort by bonus points
+  const sorted = [...withBonus].sort((a,b)=>getBonusPts(b)-getBonusPts(a));
+
+  let html='';
+
+  // ── Summary bar chart ──
+  const maxBpts = Math.max(...sorted.map(p=>getBonusPts(p)),1);
+  html+=`<div class="bv-section">
+    <div class="bv-section-title">Puntos bonus por participante</div>`;
+  sorted.forEach(p=>{
+    const bpts=getBonusPts(p);
+    const pct=Math.round(bpts/maxBpts*100);
+    html+=`<div class="bv-summary-row">
+      <div class="bv-summary-name">${p.name}</div>
+      <div class="bv-bar-wrap"><div class="bv-bar" style="width:${pct}%"></div></div>
+      <div class="bv-summary-pts">${bpts} pts</div>
+    </div>`;
+  });
+  html+='</div>';
+
+  // ── Per-question breakdown ──
+  const categories = {
+    'Premios individuales': BONUS_Q.filter(q=>['b4','b5','b6','b7'].includes(q.id)),
+    'Campeones del torneo': BONUS_Q.filter(q=>['b1','b2','b3'].includes(q.id)),
+    'Ganadores de grupo': BONUS_Q.filter(q=>q.id.startsWith('b')&&parseInt(q.id.slice(1))>=8),
+  };
+
+  Object.entries(categories).forEach(([catName, questions])=>{
+    html+=`<div class="bv-section">
+      <div class="bv-section-title">${catName}</div>`;
+
+    questions.forEach(q=>{
+      // Tally votes
+      const votes={};
+      withBonus.forEach(p=>{
+        const pick=(p.bonus[q.id]||'').replace(/ \+\d+$/,'');
+        if(pick) votes[pick]=(votes[pick]||0)+1;
+      });
+      const topPick=Object.entries(votes).sort((a,b)=>b[1]-a[1])[0];
+      const bonusReal=(bonusResults[q.id]||'').replace(/ \+\d+$/,'');
+
+      html+=`<div style="background:var(--dark3);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:8px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+          <span style="font-size:13px;font-weight:500">${q.label}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            ${topPick?`<span class="bv-most-picked">Popular: ${topPick[0]} (${topPick[1]})</span>`:''}
+            ${bonusReal?`<span style="font-size:11px;padding:2px 8px;background:rgba(0,200,83,.15);color:#4dff91;border-radius:20px">✓ ${bonusReal}</span>`:''}
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:6px">`;
+
+      sorted.forEach(p=>{
+        const pick=(p.bonus[q.id]||'').replace(/ \+\d+$/,'');
+        const isCorrect=bonusReal&&pick===bonusReal;
+        const isEmpty=!pick;
+        html+=`<div style="display:flex;flex-direction:column;align-items:center;gap:3px;min-width:70px;max-width:90px">
+          <span style="font-size:10px;color:var(--muted);text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:88px">${p.name}</span>
+          <span class="bv-pick ${isEmpty?'pending':isCorrect?'correct':'wrong'}">
+            ${isEmpty?'—':pick.length>12?pick.slice(0,11)+'…':pick}
+          </span>
+        </div>`;
+      });
+
+      html+='</div></div>';
+    });
+
+    html+='</div>';
+  });
+
+  el.innerHTML=html;
+}
+
+/* ════════════════════════════════════════
+   TABLA DE GRUPOS
+   ════════════════════════════════════════ */
+const GROUP_TEAMS = {
+  'A': ['México','Corea del Sur','Chequia','Sudáfrica'],
+  'B': ['Canadá','Qatar','Suiza','Bosnia y Herz.'],
+  'C': ['Brasil','Escocia','Marruecos','Haití'],
+  'D': ['USA','Australia','Turquía','Paraguay'],
+  'E': ['Alemania','Costa de Marfil','Ecuador','Curazao'],
+  'F': ['Holanda','Japón','Suecia','Túnez'],
+  'G': ['Bélgica','Egipto','Irán','Nueva Zelanda'],
+  'H': ['España','Arabia Saudita','Uruguay','Cabo Verde'],
+  'I': ['Francia','Senegal','Noruega','Irak'],
+  'J': ['Argentina','Argelia','Austria','Jordania'],
+  'K': ['Portugal','Colombia','Uzbekistán','R.D. Congo'],
+  'L': ['Inglaterra','Ghana','Panamá','Croacia'],
+};
+
+function calcGroupStandings(groupLetter){
+  const teams = GROUP_TEAMS[groupLetter];
+  const stats = {};
+  teams.forEach(t => stats[t] = {pj:0,pg:0,pe:0,pp:0,gf:0,gc:0,pts:0});
+
+  // Find all matches in this group
+  const groupMatches = MATCHES.filter(m => m.ph === `Grupo ${groupLetter}`);
+  groupMatches.forEach(m => {
+    const real = realResults[m.id];
+    if(!real) return;
+    const hg=parseInt(real.home), ag=parseInt(real.away);
+    if(!stats[m.h]||!stats[m.a]) return;
+    stats[m.h].pj++; stats[m.a].pj++;
+    stats[m.h].gf+=hg; stats[m.h].gc+=ag;
+    stats[m.a].gf+=ag; stats[m.a].gc+=hg;
+    if(hg>ag){ stats[m.h].pg++; stats[m.h].pts+=3; stats[m.a].pp++; }
+    else if(ag>hg){ stats[m.a].pg++; stats[m.a].pts+=3; stats[m.h].pp++; }
+    else{ stats[m.h].pe++; stats[m.h].pts+=1; stats[m.a].pe++; stats[m.a].pts+=1; }
+  });
+
+  return Object.entries(stats)
+    .map(([name,s]) => ({name,...s,dg:s.gf-s.gc}))
+    .sort((a,b) => b.pts-a.pts || b.dg-a.dg || b.gf-a.gf || a.name.localeCompare(b.name));
+}
+
+function renderGroups(){
+  let html='';
+  Object.keys(GROUP_TEAMS).forEach(g => {
+    const standings = calcGroupStandings(g);
+    const groupMatches = MATCHES.filter(m => m.ph===`Grupo ${g}`);
+    const playedCount = groupMatches.filter(m=>realResults[m.id]).length;
+
+    html+=`<div class="group-card">
+      <div class="group-card-title">
+        <span>Grupo ${g}</span>
+        <button class="toggle-matches" onclick="toggleGroupMatches('${g}')">
+          ${playedCount}/${groupMatches.length} partidos ▾
+        </button>
+      </div>
+      <table class="group-table">
+        <thead><tr>
+          <th>Equipo</th><th>PJ</th><th>PG</th><th>PE</th><th>PP</th>
+          <th>GF</th><th>GC</th><th>DG</th><th>Pts</th>
+        </tr></thead>
+        <tbody>`;
+
+    standings.forEach((t,i) => {
+      const rowClass = i<2?'qualified':i===2?'playoff':'';
+      html+=`<tr class="${rowClass}">
+        <td>${t.name}</td>
+        <td>${t.pj}</td>
+        <td style="color:${t.pg>0?'#4dff91':'var(--text)'}">${t.pg}</td>
+        <td>${t.pe}</td>
+        <td style="color:${t.pp>0?'#ff6b8a':'var(--text)'}">${t.pp}</td>
+        <td>${t.gf}</td>
+        <td>${t.gc}</td>
+        <td style="color:${t.dg>0?'#4dff91':t.dg<0?'#ff6b8a':'var(--text)'}">${t.dg>0?'+':''}${t.dg}</td>
+        <td style="font-weight:700;color:var(--gold)">${t.pts}</td>
+      </tr>`;
+    });
+
+    html+=`</tbody></table>
+      <div class="group-matches" id="gm_${g}">`;
+
+    groupMatches.forEach(m => {
+      const real = realResults[m.id];
+      const st = getMatchStatus(m);
+      const isLive = st.status==='LIVE'||st.status==='HT';
+      let scoreDisp='';
+      if(real) scoreDisp=`<span class="gmatch-score">${real.home} — ${real.away}</span>`;
+      else if(isLive) scoreDisp=`<span class="gmatch-score live">EN VIVO</span>`;
+      else scoreDisp=`<span class="gmatch-score ns">${fmtMexTime(m.dt,m.tm)}</span>`;
+
+      html+=`<div class="gmatch-row">
+        <span class="gmatch-team">${m.h}</span>
+        ${scoreDisp}
+        <span class="gmatch-team r">${m.a}</span>
+      </div>`;
+    });
+
+    html+=`</div></div>`;
+  });
+
+  document.getElementById('groups-content').innerHTML=html;
+}
+
+function toggleGroupMatches(g){
+  const el=document.getElementById('gm_'+g);
+  if(!el)return;
+  el.classList.toggle('open');
 }
 
 /* ════════════════════════════════════════
@@ -1107,23 +1501,58 @@ function buildItems(opts,sel,qid){
   }).join('');
 }
 
+function isBonusLocked(){
+  // Bonus locks when first match starts (Mexico vs South Africa June 11 15:00 ET)
+  return isStarted('2026-06-11','15:00');
+}
+
 function renderBonus(){
+  const locked = isBonusLocked();
+  // Update banner and hide submit if locked
+  const banner = document.getElementById('bonus-banner');
+  const submitWrap = document.getElementById('bonus-submit-wrap');
+  if(banner) banner.innerHTML = locked
+    ? '🔒 Los pronósticos bonus están <strong>bloqueados</strong>. El torneo ya comenzó.'
+    : '⭐ Pronostica premios especiales. Cada acierto vale <strong>2 puntos extra</strong>. Se bloquean al inicio del torneo (11 jun).';
+  if(submitWrap) submitWrap.style.display = locked ? 'none' : 'block';
+
   let html='';
   BONUS_Q.forEach(q=>{
     const sel=myBonus[q.id]||'';
     const clean=sel.replace(/ \+\d+$/,'');
     const dispSel=sel.replace(/ (\+\d+)$/,' <span style="color:#4dff91;font-size:11px">$1</span>');
-    html+=`<div class="bcard">
-      <div class="btitle">${q.label} <span class="bpts">+${q.pts} pts</span></div>
-      ${q.hint?`<div class="bhint">📋 ${q.hint}</div>`:''}
-      <div class="swrap" id="sw_${q.id}">
-        <span class="sico">🔍</span>
-        <input class="bsearch" id="bs_${q.id}" placeholder="Buscar..." value="${clean}" autocomplete="off"
-          oninput="filtBonus('${q.id}')" onfocus="openDD('${q.id}')"/>
-        <div class="dlist" id="dd_${q.id}">${buildItems(q.opts,sel,q.id)}</div>
-        ${sel?`<div class="seltag">${dispSel} <button onclick="clearBonus('${q.id}')">×</button></div>`:''}
-      </div>
-    </div>`;
+    const bonusReal = bonusResults[q.id]||'';
+    const isCorrect = bonusReal && sel && sel.replace(/ \+\d+$/,'')===bonusReal.replace(/ \+\d+$/,'');
+
+    if(locked){
+      // Read-only view
+      html+=`<div class="bcard" style="${isCorrect?'border-color:rgba(0,200,83,.4);background:rgba(0,200,83,.03)':''}">
+        <div class="btitle">${q.label} <span class="bpts">+${q.pts} pts</span>
+          ${isCorrect?'<span style="font-size:11px;color:#4dff91;margin-left:6px">✓ Correcto +2</span>':''}
+          ${bonusReal&&!isCorrect?'<span style="font-size:11px;color:#ff6b8a;margin-left:6px">✗</span>':''}
+        </div>
+        ${q.hint?`<div class="bhint">📋 ${q.hint}</div>`:''}
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px">
+          <div style="font-size:13px">
+            <span style="color:var(--muted)">Tu pick: </span>
+            <span style="font-weight:600;color:${isCorrect?'#4dff91':sel?'var(--text)':'var(--muted)'}">${sel?sel.replace(/ \+\d+$/,''):'Sin pick'}</span>
+          </div>
+          ${bonusReal?`<div style="font-size:12px;color:var(--muted)">Resultado: <strong style="color:var(--gold)">${bonusReal}</strong></div>`:''}
+        </div>
+      </div>`;
+    } else {
+      html+=`<div class="bcard">
+        <div class="btitle">${q.label} <span class="bpts">+${q.pts} pts</span></div>
+        ${q.hint?`<div class="bhint">📋 ${q.hint}</div>`:''}
+        <div class="swrap" id="sw_${q.id}">
+          <span class="sico">🔍</span>
+          <input class="bsearch" id="bs_${q.id}" placeholder="Buscar..." value="${clean}" autocomplete="off"
+            oninput="filtBonus('${q.id}')" onfocus="openDD('${q.id}')"/>
+          <div class="dlist" id="dd_${q.id}">${buildItems(q.opts,sel,q.id)}</div>
+          ${sel?`<div class="seltag">${dispSel} <button onclick="clearBonus('${q.id}')">×</button></div>`:''}
+        </div>
+      </div>`;
+    }
   });
   document.getElementById('bonus-list').innerHTML=html;
 }
@@ -1337,6 +1766,8 @@ function showTab(t,btn){
   document.getElementById('tab-'+t).classList.add('active');
   btn.classList.add('active');
   if(t==='ranking'){renderRanking();}
+  if(t==='grupos'){renderGroups();}
+  if(t==='bonusview'){renderBonusView();}
   if(t==='scores'){
     // Auto-select today if there are games today
     const mxNow = new Date(new Date().toLocaleString('en-US',{timeZone:'America/Mexico_City'}));
@@ -1409,6 +1840,7 @@ async function init(){
         if(activeTab&&activeTab.includes('Leaderboard')) renderRanking();
         if(activeTab&&activeTab.includes('Marcadores')) renderResults();
         if(activeTab&&activeTab.includes('En Vivo')) renderScores();
+        if(activeTab&&activeTab.includes('Grupos')) renderGroups();
       })
       .subscribe();
     console.log('✅ Supabase Realtime subscribed');
