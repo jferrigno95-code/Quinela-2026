@@ -1,50 +1,82 @@
 // Vercel Serverless Function — /api/scores
-// Calls api-sports.io server-side (no CORS issue) and returns WC 2026 results
-// Deploy alongside index.html — Vercel picks this up automatically
+// Usa worldcup26.ir — API gratis y open-source específica para el Mundial 2026
+// Sin API key requerida. Endpoint: https://worldcup26.ir/get/games
 
 export default async function handler(req, res) {
-  // Allow your Vercel app to call this endpoint
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
-
-  const API_KEY = process.env.API_SPORTS_KEY || '84cb97940887a614942a00e77344f6ab';
+  res.setHeader('Cache-Control', 's-maxage=60'); // cache 60 seg en Vercel
 
   try {
-    const response = await fetch(
-      'https://v3.football.api-sports.io/fixtures?league=1&season=2026',
-      {
-        headers: {
-          'x-apisports-key': API_KEY,
-        },
-      }
-    );
+    const response = await fetch('https://worldcup26.ir/get/games', {
+      headers: { 'Accept': 'application/json' },
+    });
 
     if (!response.ok) {
-      return res.status(response.status).json({
-        error: `API-Sports responded with ${response.status}`,
-      });
+      // Fallback: intentar openfootball que también tiene los datos
+      const fallback = await fetch(
+        'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json'
+      );
+      if (!fallback.ok) {
+        return res.status(502).json({ error: 'Ambas fuentes no disponibles' });
+      }
+      const fbData = await fallback.json();
+      const fixtures = parseOpenFootball(fbData);
+      return res.status(200).json({ fixtures, source: 'openfootball' });
     }
 
     const data = await response.json();
 
-    // Check for API-level errors
-    if (data.errors && Object.keys(data.errors).length > 0) {
-      return res.status(400).json({ error: Object.values(data.errors)[0] });
-    }
+    // worldcup26.ir devuelve array de partidos
+    // Normalizar al formato que usa la app
+    const fixtures = (Array.isArray(data) ? data : data.games || data.matches || [])
+      .map(g => ({
+        home: g.home_team?.name || g.homeTeam?.name || g.home || '',
+        away: g.away_team?.name || g.awayTeam?.name || g.away || '',
+        goalsHome: g.home_score ?? g.homeScore ?? g.goals?.home ?? null,
+        goalsAway: g.away_score ?? g.awayScore ?? g.goals?.away ?? null,
+        status: normalizeStatus(g.status || g.state || ''),
+        minute: g.minute || g.elapsed || null,
+      }));
 
-    // Return only what the app needs: id, teams, goals, status
-    const fixtures = (data.response || []).map((f) => ({
-      id: f.fixture?.id,
-      status: f.fixture?.status?.short,
-      home: f.teams?.home?.name,
-      away: f.teams?.away?.name,
-      goalsHome: f.goals?.home,
-      goalsAway: f.goals?.away,
-      minute: f.fixture?.status?.elapsed,
-    }));
+    res.status(200).json({ fixtures, source: 'worldcup26.ir' });
 
-    res.status(200).json({ fixtures, remaining: data.parameters });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    // Último fallback: openfootball GitHub
+    try {
+      const fallback = await fetch(
+        'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json'
+      );
+      const fbData = await fallback.json();
+      const fixtures = parseOpenFootball(fbData);
+      return res.status(200).json({ fixtures, source: 'openfootball' });
+    } catch (e) {
+      return res.status(500).json({ error: err.message });
+    }
   }
+}
+
+function normalizeStatus(s) {
+  const st = (s || '').toUpperCase();
+  if (st === 'COMPLETED' || st === 'FINISHED' || st === 'FT' || st === 'FULL_TIME') return 'FT';
+  if (st === 'IN_PROGRESS' || st === 'LIVE' || st === '1H' || st === '2H') return '1H';
+  if (st === 'HALF_TIME' || st === 'HT') return 'HT';
+  if (st === 'AET' || st === 'AFTER_EXTRA_TIME') return 'AET';
+  if (st === 'PEN' || st === 'PENALTIES') return 'PEN';
+  return 'NS';
+}
+
+function parseOpenFootball(data) {
+  // openfootball format: { matches: [ { team1, team2, score: { ft: [h,a] } } ] }
+  const matches = data.matches || [];
+  return matches
+    .filter(m => m.score && m.score.ft)
+    .map(m => ({
+      home: m.team1 || '',
+      away: m.team2 || '',
+      goalsHome: m.score.ft[0],
+      goalsAway: m.score.ft[1],
+      status: 'FT',
+      minute: 90,
+    }));
 }
