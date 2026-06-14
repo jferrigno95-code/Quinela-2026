@@ -1136,22 +1136,29 @@ async function saveMatchResult(id){
 const API_SPORTS_KEY = localStorage.getItem('api_sports_key') || '84cb97940887a614942a00e77344f6ab';
 
 // Manual team name map for API-Sports response
+// Team name → our Spanish name (covers worldcup26.ir, openfootball, api-sports)
 const API_SPORTS_MAP = {
+  // English names
   'Mexico':'México','South Africa':'Sudáfrica','Korea Republic':'Corea del Sur',
-  'Czech Republic':'Chequia','Czechia':'Chequia','Canada':'Canadá',
-  'Bosnia and Herzegovina':'Bosnia y Herz.','USA':'USA','Paraguay':'Paraguay',
-  'Qatar':'Qatar','Switzerland':'Suiza','Brazil':'Brasil','Morocco':'Marruecos',
-  'Haiti':'Haití','Scotland':'Escocia','Australia':'Australia','Turkey':'Turquía',
-  'Germany':'Alemania',"Ivory Coast":"Costa de Marfil",'Ecuador':'Ecuador',
+  'South Korea':'Corea del Sur','Czech Republic':'Chequia','Czechia':'Chequia',
+  'Canada':'Canadá','Bosnia and Herzegovina':'Bosnia y Herz.',
+  'Bosnia & Herzegovina':'Bosnia y Herz.','USA':'USA','United States':'USA',
+  'Paraguay':'Paraguay','Qatar':'Qatar','Switzerland':'Suiza','Brazil':'Brasil',
+  'Morocco':'Marruecos','Haiti':'Haití','Scotland':'Escocia','Australia':'Australia',
+  'Turkey':'Turquía','Türkiye':'Turquía','Germany':'Alemania',
+  "Ivory Coast":"Costa de Marfil","Côte d'Ivoire":"Costa de Marfil",
+  "Cote d'Ivoire":'Costa de Marfil','Ecuador':'Ecuador',
   'Netherlands':'Holanda','Japan':'Japón','Sweden':'Suecia','Tunisia':'Túnez',
   'Spain':'España','Cape Verde':'Cabo Verde','Belgium':'Bélgica','Egypt':'Egipto',
   'Saudi Arabia':'Arabia Saudita','Uruguay':'Uruguay','Iran':'Irán',
   'New Zealand':'Nueva Zelanda','France':'Francia','Senegal':'Senegal',
   'Iraq':'Irak','Norway':'Noruega','Argentina':'Argentina','Algeria':'Argelia',
   'Austria':'Austria','Jordan':'Jordania','Portugal':'Portugal',
-  'DR Congo':'R.D. Congo','England':'Inglaterra','Croatia':'Croacia',
-  'Ghana':'Ghana','Panama':'Panamá','Uzbekistan':'Uzbekistán',
-  'Colombia':'Colombia','Serbia':'Serbia',
+  'DR Congo':'R.D. Congo','Democratic Republic of Congo':'R.D. Congo',
+  'England':'Inglaterra','Croatia':'Croacia','Ghana':'Ghana','Panama':'Panamá',
+  'Uzbekistan':'Uzbekistán','Colombia':'Colombia','Curaçao':'Curazao',
+  'Curacao':'Curazao','Serbia':'Serbia',
+  // End of map
 };
 
 function findMatchId(homeApi, awayApi){
