@@ -270,6 +270,26 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
 .pz-real-score{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:3px;color:var(--gold)}
 .pz-real-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
 
+/* WEEKLY SPLIT */
+.split-section{margin-bottom:28px}
+.split-title{font-family:'Bebas Neue',sans-serif;font-size:14px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;padding:6px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.split-subtitle{font-size:11px;color:var(--muted);font-family:'DM Sans',sans-serif;letter-spacing:0;font-weight:400}
+.split-row{display:flex;align-items:center;padding:8px 10px;border-radius:8px;margin-bottom:4px;gap:10px;background:var(--dark3);border:1px solid var(--border)}
+.split-row.rank-1{background:rgba(255,214,0,.08);border-color:rgba(255,214,0,.3)}
+.split-row.rank-2{background:rgba(200,200,200,.05);border-color:rgba(200,200,200,.2)}
+.split-row.rank-3{background:rgba(205,100,50,.06);border-color:rgba(205,100,50,.2)}
+.split-medal{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+.split-name{flex:1;font-size:13px;font-weight:500}
+.split-pts{font-size:13px;font-weight:700;color:var(--gold)}
+.split-detail{font-size:11px;color:var(--muted);margin-left:4px}
+.split-tied{font-size:10px;padding:1px 6px;background:rgba(255,255,255,.06);color:var(--muted);border-radius:10px;margin-left:4px}
+.split-tabs{display:flex;gap:4px;margin-bottom:14px;flex-wrap:wrap}
+.split-tab{padding:5px 12px;font-size:12px;border-radius:20px;border:1px solid var(--border);background:var(--dark3);color:var(--muted);cursor:pointer;transition:all .15s}
+.split-tab.active{background:rgba(255,214,0,.12);color:var(--gold);border-color:rgba(255,214,0,.4)}
+.split-empty{font-size:12px;color:var(--muted);padding:10px 0;text-align:center;font-style:italic}
+.grand-total-card{background:linear-gradient(135deg,rgba(255,214,0,.12),rgba(255,214,0,.04));border:1px solid rgba(255,214,0,.4);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px}
+.grand-total-title{font-family:'Bebas Neue',sans-serif;font-size:16px;letter-spacing:2px;color:var(--gold);margin-bottom:10px}
+
 ::-webkit-scrollbar{width:4px;height:4px}
 ::-webkit-scrollbar-thumb{background:var(--dark4);border-radius:2px}
 </style>
@@ -357,9 +377,20 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   </div>
 
   <div id="tab-ranking" class="section">
-    <div id="last-upd" style="font-size:11px;color:var(--muted);margin-bottom:14px;text-align:right"></div>
-    <div id="podium-wrap"></div>
-    <div id="lb-list"></div>
+    <div id="last-upd" style="font-size:11px;color:var(--muted);margin-bottom:10px;text-align:right"></div>
+    <!-- View toggle -->
+    <div class="split-tabs">
+      <button class="split-tab active" data-view="total" onclick="setLbView('total',this)">🏆 General</button>
+      <button class="split-tab" data-view="week1" onclick="setLbView('week1',this)">Semana 1</button>
+      <button class="split-tab" data-view="week2" onclick="setLbView('week2',this)">Semana 2</button>
+      <button class="split-tab" data-view="week3" onclick="setLbView('week3',this)">Semana 3</button>
+      <button class="split-tab" data-view="r32" onclick="setLbView('r32',this)">Ronda de 32</button>
+      <button class="split-tab" data-view="r16" onclick="setLbView('r16',this)">Octavos</button>
+      <button class="split-tab" data-view="qf" onclick="setLbView('qf',this)">Cuartos</button>
+      <button class="split-tab" data-view="finals" onclick="setLbView('finals',this)">Semi/Final/3ro</button>
+      <button class="split-tab" data-view="bonus" onclick="setLbView('bonus',this)">⭐ Bonus</button>
+    </div>
+    <div id="lb-view-content"></div>
     <div id="lb-detail" style="margin-top:20px"></div>
   </div>
 
@@ -953,42 +984,246 @@ async function submitPicks(){
 }
 
 /* ════════════════════════════════════════
+   WEEKLY SPLIT DEFINITIONS
+   ════════════════════════════════════════ */
+
+// Match IDs per period
+const PERIODS = {
+  week1: {
+    label: 'Semana 1',
+    subtitle: '11–17 Jun',
+    ids: [1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24],
+  },
+  week2: {
+    label: 'Semana 2',
+    subtitle: '18–24 Jun',
+    ids: [25,26,27,28,29,30,31,32,33,34,35,36,37,38,39,40,41,42,43,44,45,46,47,48],
+  },
+  week3: {
+    label: 'Semana 3',
+    subtitle: '25–27 Jun',
+    ids: [49,50,51,52,53,54,55,56,57,58,59,60,61,62,63,64,65,66,67,68,69,70,71,72],
+  },
+  r32: {
+    label: 'Ronda de 32',
+    subtitle: '28 Jun–3 Jul',
+    ids: [73,74,75,76,77,78,79,80,81,82,83,84,85,86,87,88],
+  },
+  r16: {
+    label: 'Octavos de Final',
+    subtitle: '4–7 Jul',
+    ids: [89,90,91,92,93,94,95,96],
+  },
+  qf: {
+    label: 'Cuartos de Final',
+    subtitle: '9–11 Jul',
+    ids: [97,98,99,100],
+  },
+  finals: {
+    label: 'Semi / Final / 3ro',
+    subtitle: '14–19 Jul',
+    ids: [101,102,103,104],
+  },
+};
+
+let lbView = 'total';
+
+function setLbView(view, btn) {
+  lbView = view;
+  document.querySelectorAll('.split-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderRanking();
+}
+
+// Get pts for a participant in a specific set of match IDs
+function getPtsForPeriod(p, matchIds) {
+  let t = 0;
+  matchIds.forEach(id => {
+    const m = MATCHES.find(x => x.id === id);
+    if (!m || !isStarted(m.dt, m.tm, m.tz)) return;
+    const real = realResults[id];
+    const pick = p.picks && p.picks[id];
+    if (!real || !pick) return;
+    const pts = calcPts(pick, real);
+    if (pts !== null) t += pts;
+  });
+  return t;
+}
+
+function buildSplitSection(period, participants) {
+  const { label, subtitle, ids } = period;
+
+  // Only show if at least one match in this period has started
+  const hasStarted = ids.some(id => {
+    const m = MATCHES.find(x => x.id === id);
+    return m && isStarted(m.dt, m.tm, m.tz);
+  });
+
+  const sorted = [...participants]
+    .map(p => ({ ...p, periodPts: getPtsForPeriod(p, ids) }))
+    .sort((a, b) => b.periodPts - a.periodPts);
+
+  const medals = ['🥇','🥈','🥉'];
+  let html = `<div class="split-section">
+    <div class="split-title">${label} <span class="split-subtitle">${subtitle}</span></div>`;
+
+  if (!hasStarted) {
+    html += `<div class="split-empty">Los partidos de este período aún no han iniciado.</div>`;
+  } else {
+    // Show top 3 + full list
+    sorted.forEach((p, i) => {
+      const tied = i > 0 && sorted[i-1].periodPts === p.periodPts;
+      const rankClass = i === 0 ? 'rank-1' : i === 1 ? 'rank-2' : i === 2 ? 'rank-3' : '';
+      const medal = medals[i] || `<span style="font-size:13px;color:var(--muted)">#${i+1}</span>`;
+      const matchCount = ids.filter(id => {
+        const m = MATCHES.find(x => x.id === id);
+        return m && isStarted(m.dt, m.tm, m.tz) && realResults[id] && p.picks && p.picks[id];
+      }).length;
+      html += `<div class="split-row ${rankClass}">
+        <span class="split-medal">${medal}</span>
+        <span class="split-name">${p.name}</span>
+        ${tied ? '<span class="split-tied">empate</span>' : ''}
+        <span class="split-pts">${p.periodPts} pts</span>
+        <span class="split-detail">${matchCount} juegos</span>
+      </div>`;
+    });
+  }
+
+  html += '</div>';
+  return html;
+}
+
+/* ════════════════════════════════════════
    LEADERBOARD
    ════════════════════════════════════════ */
 function renderRanking(){
   document.getElementById('pcount').textContent=participants.length;
   const upd=document.getElementById('last-upd');
-  if(upd) upd.innerHTML=`<span class="ldot"></span> En vivo · ${new Date().toLocaleTimeString('es-MX')}`;
+  if(upd) upd.innerHTML=`<span class="ldot"></span> En vivo · ${new Date().toLocaleTimeString('es-MX',{timeZone:'America/Mexico_City'})}`;
+  const el=document.getElementById('lb-view-content');
+  if(!el) return;
   if(!participants.length){
-    document.getElementById('podium-wrap').innerHTML='';
-    document.getElementById('lb-list').innerHTML='<p style="color:var(--muted);font-size:13px;padding:20px 0;text-align:center">Aún no hay participantes.</p>';
+    el.innerHTML='<p style="color:var(--muted);font-size:13px;padding:30px 0;text-align:center">Aún no hay participantes.</p>';
     document.getElementById('lb-detail').innerHTML='';
     return;
   }
-  const sorted=[...participants].sort((a,b)=>getTotalPts(b)-getTotalPts(a));
-  const medals=['🥇','🥈','🥉'],bars=['g1','g2','g3'],podOrder=[1,0,2];
-  let pod='<div class="podium">';
-  podOrder.forEach(i=>{
-    if(!sorted[i])return;
-    pod+=`<div class="pod"><div class="pbar ${bars[i]}"><span class="prank">${medals[i]}</span></div>
-      <div class="pname">${sorted[i].name}</div><div class="ppts">${getTotalPts(sorted[i])} pts</div></div>`;
-  });
-  pod+='</div>';
-  document.getElementById('podium-wrap').innerHTML=pod;
+  if(lbView==='total') renderTotalLeaderboard();
+  else if(lbView==='bonus') renderBonusLeaderboard();
+  else renderPeriodLeaderboard(lbView);
+}
 
-  let lb='<p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Clasificación completa</p>';
-  sorted.forEach((p,i)=>{
-    lb+=`<div class="lbrow">
-      <div class="lbrank">#${i+1}</div>
-      <div class="lbname">${p.name}</div>
-      <div class="lbpts">${getTotalPts(p)} pts</div>
-      <button class="exbtn" onclick="toggleDetail(this,'${p.name.replace(/'/g,"\\'")}')">▾</button>
-    </div>
-    <div class="pdetail" id="det_${p.name.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'')}"></div>`;
+function podiumHtml(sorted){
+  const medals=['🥇','🥈','🥉'],bars=['g1','g2','g3'],order=[1,0,2];
+  let h='<div class="podium">';
+  order.forEach(i=>{
+    if(!sorted[i])return;
+    const pts=typeof sorted[i].periodPts!=='undefined'?sorted[i].periodPts:getTotalPts(sorted[i]);
+    h+=`<div class="pod"><div class="pbar ${bars[i]}"><span class="prank">${medals[i]}</span></div>
+      <div class="pname">${sorted[i].name}</div><div class="ppts">${pts} pts</div></div>`;
   });
-  document.getElementById('lb-list').innerHTML=lb;
+  return h+'</div>';
+}
+
+function renderTotalLeaderboard(){
+  const el=document.getElementById('lb-view-content');
+  const sorted=[...participants].sort((a,b)=>getTotalPts(b)-getTotalPts(a));
+  const medals=['🥇','🥈','🥉'];
+
+  let lb=podiumHtml(sorted);
+  lb+='<p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Clasificación completa</p>';
+  sorted.forEach((p,i)=>{
+    const pts=getTotalPts(p),bpts=getBonusPts(p);
+    lb+=`<div class="lbrow">
+      <div class="lbrank">${medals[i]||'#'+(i+1)}</div>
+      <div class="lbname">${p.name}</div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:1px">
+        <div class="lbpts">${pts} pts</div>
+        ${bpts>0?`<div style="font-size:10px;color:var(--muted)">⭐ +${bpts} bonus</div>`:''}
+      </div>
+      <button class="exbtn" onclick="toggleDetail(this,'${p.name.replace(/'/g,"\'")}')">&#9662;</button>
+    </div>
+    <div class="pdetail" id="det_${p.name.replace(/[^a-zA-Z0-9]/g,'_')}"></div>`;
+  });
+
+  // Summary table
+  const allPeriods=Object.entries(PERIODS);
+  let tbl=`<div style="margin-top:20px">
+    <p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Puntos por período</p>
+    <div style="overflow-x:auto;border-radius:var(--radius);border:1px solid var(--border)">
+    <table style="width:100%;border-collapse:collapse;font-size:11px;min-width:500px">
+    <thead><tr style="background:var(--dark4)">
+      <th style="text-align:left;padding:7px 10px;color:var(--muted);font-weight:500;position:sticky;left:0;background:var(--dark4)">Participante</th>`;
+  allPeriods.forEach(([k,p])=>{
+    tbl+=`<th style="padding:7px 6px;color:var(--muted);font-weight:500;text-align:center;white-space:nowrap;font-size:10px">${p.label}</th>`;
+  });
+  tbl+=`<th style="padding:7px 6px;color:var(--gold);font-weight:500;text-align:center">⭐Bonus</th>
+    <th style="padding:7px 8px;color:var(--gold);font-weight:700;text-align:center">TOTAL</th>
+  </tr></thead><tbody>`;
+  sorted.forEach((p,i)=>{
+    tbl+=`<tr style="background:${i%2===0?'var(--dark3)':'var(--dark4)'}">
+      <td style="padding:7px 10px;font-weight:500;white-space:nowrap;position:sticky;left:0;background:${i%2===0?'var(--dark3)':'var(--dark4)'}">${p.name}</td>`;
+    allPeriods.forEach(([k,period])=>{
+      const pts=getPtsForPeriod(p,period.ids);
+      const has=period.ids.some(id=>{const m=MATCHES.find(x=>x.id===id);return m&&isStarted(m.dt,m.tm,m.tz)&&realResults[id];});
+      tbl+=`<td style="padding:7px 6px;text-align:center;color:${pts>0?'var(--gold)':'var(--muted)'}">${has?pts:'—'}</td>`;
+    });
+    const bpts=getBonusPts(p),tot=getTotalPts(p);
+    tbl+=`<td style="padding:7px 6px;text-align:center;color:${bpts>0?'var(--gold)':'var(--muted)'}">${bpts>0?bpts:'—'}</td>
+      <td style="padding:7px 8px;text-align:center;font-weight:700;color:var(--gold)">${tot}</td></tr>`;
+  });
+  tbl+='</tbody></table></div></div>';
+
+  el.innerHTML=lb+tbl;
   document.getElementById('lb-detail').innerHTML='';
 }
+
+function renderPeriodLeaderboard(view){
+  const el=document.getElementById('lb-view-content');
+  const period=PERIODS[view];
+  if(!period){el.innerHTML='';return;}
+  const hasStarted=period.ids.some(id=>{const m=MATCHES.find(x=>x.id===id);return m&&isStarted(m.dt,m.tm,m.tz);});
+  if(!hasStarted){
+    el.innerHTML=`<div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">Los partidos de <strong style="color:var(--text)">${period.label}</strong> (${period.subtitle}) aún no han iniciado.</div>`;
+    document.getElementById('lb-detail').innerHTML='';
+    return;
+  }
+  const medals=['🥇','🥈','🥉'];
+  const sorted=[...participants].map(p=>({...p,periodPts:getPtsForPeriod(p,period.ids)})).sort((a,b)=>b.periodPts-a.periodPts);
+  let lb=podiumHtml(sorted);
+  lb+=`<p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">${period.label} — ${period.subtitle}</p>`;
+  sorted.forEach((p,i)=>{
+    const tied=i>0&&sorted[i-1].periodPts===p.periodPts;
+    lb+=`<div class="lbrow">
+      <div class="lbrank">${medals[i]||'#'+(i+1)}</div>
+      <div class="lbname">${p.name}${tied?' <span class="split-tied">empate</span>':''}</div>
+      <div class="lbpts">${p.periodPts} pts</div>
+      <button class="exbtn" onclick="toggleDetail(this,'${p.name.replace(/'/g,"\'")}')">&#9662;</button>
+    </div>
+    <div class="pdetail" id="det_${p.name.replace(/[^a-zA-Z0-9]/g,'_')}"></div>`;
+  });
+  el.innerHTML=lb;
+  document.getElementById('lb-detail').innerHTML='';
+}
+
+function renderBonusLeaderboard(){
+  const el=document.getElementById('lb-view-content');
+  const medals=['🥇','🥈','🥉'];
+  const sorted=[...participants].map(p=>({...p,periodPts:getBonusPts(p)})).sort((a,b)=>b.periodPts-a.periodPts);
+  let lb=podiumHtml(sorted);
+  lb+='<p style="font-size:11px;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em">Puntos Bonus ⭐</p>';
+  sorted.forEach((p,i)=>{
+    lb+=`<div class="lbrow">
+      <div class="lbrank">${medals[i]||'#'+(i+1)}</div>
+      <div class="lbname">${p.name}</div>
+      <div class="lbpts">${p.periodPts} pts</div>
+      <button class="exbtn" onclick="toggleDetail(this,'${p.name.replace(/'/g,"\'")}')">&#9662;</button>
+    </div>
+    <div class="pdetail" id="det_${p.name.replace(/[^a-zA-Z0-9]/g,'_')}"></div>`;
+  });
+  el.innerHTML=lb;
+  document.getElementById('lb-detail').innerHTML='';
+}
+
 
 function toggleDetail(btn,name){
   const safeName=name.replace(/\s/g,'_').replace(/[^a-zA-Z0-9_]/g,'');
