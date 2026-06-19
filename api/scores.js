@@ -1,41 +1,53 @@
 // Vercel Serverless Function — /api/scores
-// Fuente 1: worldcup26.ir — live scores, sin API key
-// Fuente 2: openfootball/worldcup.json — resultados finales, sin API key
-// Sin CORS issues ya que corre server-side en Vercel
+// Fuente 1: ESPN hidden API — la más confiable, actualiza en tiempo real
+// Fuente 2: openfootball/worldcup.json — fallback si ESPN falla
+// Sin CORS issues ya que corre server-side en Vercel. Sin API key requerida.
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
 
-  // --- Fuente 1: worldcup26.ir (live scores) ---
+  // --- Fuente 1: ESPN (la más confiable y completa) ---
   try {
-    const r1 = await fetch('https://worldcup26.ir/get/games', {
-      headers: { 'Accept': 'application/json', 'User-Agent': 'QuinielaMundial2026' },
-      signal: AbortSignal.timeout(5000),
-    });
+    const r1 = await fetch(
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260611-20260719',
+      {
+        headers: { 'Accept': 'application/json' },
+        signal: AbortSignal.timeout(6000),
+      }
+    );
     if (r1.ok) {
-      const raw = await r1.json();
-      const games = Array.isArray(raw) ? raw : (raw.games || raw.matches || raw.data || []);
-      if (games.length > 0) {
-        const fixtures = games.map(g => ({
-          home: g.home_team || g.homeTeam || g.team1 || g.home || '',
-          away: g.away_team || g.awayTeam || g.team2 || g.away || '',
-          goalsHome: g.home_score ?? g.homeScore ?? g.score1 ?? g.goals?.home ?? null,
-          goalsAway: g.away_score ?? g.awayScore ?? g.score2 ?? g.goals?.away ?? null,
-          status: normalizeStatus(g.status || g.state || g.match_status || ''),
-          minute: g.minute || g.elapsed || null,
-        })).filter(f => f.home && f.away);
+      const data = await r1.json();
+      const events = data.events || [];
+      if (events.length > 0) {
+        const fixtures = events.map(ev => {
+          const comp = ev.competitions?.[0];
+          const competitors = comp?.competitors || [];
+          const home = competitors.find(c => c.homeAway === 'home');
+          const away = competitors.find(c => c.homeAway === 'away');
+          const statusType = comp?.status?.type;
+
+          return {
+            home: home?.team?.displayName || home?.team?.name || '',
+            away: away?.team?.displayName || away?.team?.name || '',
+            goalsHome: home?.score != null ? parseInt(home.score) : null,
+            goalsAway: away?.score != null ? parseInt(away.score) : null,
+            status: normalizeEspnStatus(statusType?.state, statusType?.completed),
+            minute: comp?.status?.displayClock || null,
+          };
+        }).filter(f => f.home && f.away);
+
         if (fixtures.length > 0) {
-          return res.status(200).json({ fixtures, source: 'worldcup26.ir' });
+          return res.status(200).json({ fixtures, source: 'espn' });
         }
       }
     }
   } catch (e) {
-    console.log('worldcup26.ir failed:', e.message);
+    console.log('ESPN failed:', e.message);
   }
 
-  // --- Fuente 2: openfootball GitHub (siempre actualizado con resultados) ---
+  // --- Fuente 2: openfootball GitHub (fallback) ---
   try {
     const r2 = await fetch(
       'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json',
@@ -66,13 +78,10 @@ export default async function handler(req, res) {
   });
 }
 
-function normalizeStatus(s) {
-  const st = (s || '').toUpperCase().replace(/[_\s-]/g, '');
-  if (['FT','FINISHED','COMPLETED','FULLTIME','FINAL'].includes(st)) return 'FT';
-  if (['1H','FIRSTHALF','INPLAY','LIVE','INPROGRESS'].includes(st)) return '1H';
-  if (['2H','SECONDHALF'].includes(st)) return '2H';
-  if (['HT','HALFTIME'].includes(st)) return 'HT';
-  if (['AET','AFTEREXTRATIME','ET'].includes(st)) return 'AET';
-  if (['PEN','PENALTIES'].includes(st)) return 'PEN';
+function normalizeEspnStatus(state, completed) {
+  // ESPN states: 'pre', 'in', 'post'
+  if (completed) return 'FT';
+  if (state === 'in') return '1H';
+  if (state === 'post') return 'FT';
   return 'NS';
 }
