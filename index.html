@@ -676,16 +676,39 @@ async function loadFromSupabase(){
       localStorage.setItem('qm26_paid',JSON.stringify(paidMap));
     }
     const {data:rData} = await sb.from('results').select('*');
-    if(rData){
+    if(rData && rData.length > 0){
+      // Only update if Supabase returned actual data (avoid wiping on empty response)
       realResults={};
       rData.forEach(r=>{ realResults[r.match_id]={home:r.home_score,away:r.away_score}; });
       localStorage.setItem('qm26_r',JSON.stringify(realResults));
+    } else if(rData && rData.length === 0) {
+      // Supabase returned empty — keep localStorage data as fallback
+      console.log('Supabase results empty — keeping local cache');
     }
   }catch(e){ console.log('Load error',e); }
 }
 async function saveParticipant(name,picks){
   if(!useSupabase) return;
-  try{ await sb.from('participants').upsert({name,picks,bonus:myBonus,updated_at:new Date().toISOString()},{onConflict:'name'}); }catch(e){}
+  try{
+    // Get existing picks from Supabase first to preserve locked match picks
+    const {data:existing} = await sb.from('participants').select('picks').eq('name',name).single();
+    let mergedPicks = picks;
+    if(existing?.picks){
+      // Merge: keep existing picks for started matches, use new picks for unlocked ones
+      mergedPicks = {...existing.picks};
+      MATCHES.forEach(m=>{
+        if(!isStarted(m.dt,m.tm,m.tz)){
+          // Only update unlocked matches
+          if(picks[m.id]!==undefined) mergedPicks[m.id] = picks[m.id];
+        }
+        // Never overwrite started match picks with 0-0
+      });
+    }
+    await sb.from('participants').upsert(
+      {name, picks:mergedPicks, bonus:myBonus, updated_at:new Date().toISOString()},
+      {onConflict:'name'}
+    );
+  }catch(e){ console.log('Save error',e); }
 }
 async function saveResult(id,h,a){
   if(!useSupabase) return;
@@ -952,6 +975,16 @@ async function submitPicks(){
   localStorage.setItem('qm26_name',name);
   const btn=document.getElementById('submit-btn');
   btn.disabled=true; btn.textContent='Publicando...';
+  // Load existing Supabase picks for started matches first (protect them)
+  const existingP = participants.find(p=>p.name===name);
+  if(existingP?.picks){
+    MATCHES.forEach(m=>{
+      if(isStarted(m.dt,m.tm,m.tz) && existingP.picks[m.id]){
+        myPicks[m.id] = existingP.picks[m.id]; // preserve started match picks
+      }
+    });
+  }
+  // Only update picks for unlocked matches
   MATCHES.forEach(m=>{
     if(!isStarted(m.dt,m.tm,m.tz)){
       myPicks[m.id]={
@@ -1435,16 +1468,31 @@ async function autoFetchResults(){
     let updated = 0;
     for(const fix of fixtures){
       const status = fix.status;
+
+      const ourId = findMatchId(fix.home||'', fix.away||'');
+      if(!ourId) continue;
+
+      // Only update if ESPN gives us real goal data (not null)
+      const hs = fix.goalsHome;
+      const as_ = fix.goalsAway;
+
+      // Skip if ESPN doesn't have real scores yet
+      if(hs===null||hs===undefined||as_===null||as_===undefined) continue;
+
+      // Only update finished or in-play matches
       if(status!=='FT'&&status!=='AET'&&status!=='PEN'&&
          status!=='1H'&&status!=='2H'&&status!=='HT'&&status!=='ET') continue;
 
-      const ourId = findMatchId(fix.home||'', fix.away||'');
-      if(!ourId){ console.log('⚠ Unmatched:', fix.home, 'vs', fix.away); continue; }
+      // NEVER overwrite a manually-entered Supabase result with ESPN 0-0
+      // unless ESPN explicitly says FT and has positive score or it's truly 0-0
+      const existing = realResults[ourId];
+      if(existing && (existing.home>0||existing.away>0) && hs===0 && as_===0 && status!=='FT') {
+        // Suspicious: we have real scores but ESPN says 0-0 and not finished
+        // Keep our data
+        continue;
+      }
 
-      const hs = fix.goalsHome ?? 0;
-      const as_ = fix.goalsAway ?? 0;
-      if(hs===null||as_===null) continue;
-      if(realResults[ourId]?.home===hs && realResults[ourId]?.away===as_) continue;
+      if(existing?.home===hs && existing?.away===as_) continue; // no change
 
       realResults[ourId] = {home:hs, away:as_};
       if(useSupabase) await saveResult(ourId, hs, as_);
