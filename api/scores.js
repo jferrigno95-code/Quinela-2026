@@ -1,21 +1,17 @@
 // Vercel Serverless Function — /api/scores
-// Fuente 1: ESPN hidden API — la más confiable, actualiza en tiempo real
-// Fuente 2: openfootball/worldcup.json — fallback si ESPN falla
-// Sin CORS issues ya que corre server-side en Vercel. Sin API key requerida.
+// ESPN hidden API — gratis, sin API key, actualiza en tiempo real
+// Fallback: openfootball/worldcup.json
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET');
   res.setHeader('Cache-Control', 's-maxage=30, stale-while-revalidate=60');
 
-  // --- Fuente 1: ESPN (la más confiable y completa) ---
+  // --- Fuente 1: ESPN ---
   try {
     const r1 = await fetch(
-      'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260611-20260719',
-      {
-        headers: { 'Accept': 'application/json' },
-        signal: AbortSignal.timeout(6000),
-      }
+      'https://site.api.espn.com/apis/site/v2/sports/soccer/fifa.world/scoreboard?limit=200&dates=20260628-20260719',
+      { headers: { 'Accept': 'application/json' }, signal: AbortSignal.timeout(6000) }
     );
     if (r1.ok) {
       const data = await r1.json();
@@ -27,13 +23,22 @@ export default async function handler(req, res) {
           const home = competitors.find(c => c.homeAway === 'home');
           const away = competitors.find(c => c.homeAway === 'away');
           const statusType = comp?.status?.type;
+          const statusName = statusType?.name || ''; // e.g. "STATUS_FULL_TIME", "STATUS_FINAL_AET", "STATUS_FINAL_PEN"
+
+          // Determine if this is AET or PEN (extra time / penalties)
+          // ESPN status names: STATUS_FINAL = normal FT, STATUS_FINAL_AET = after extra time, STATUS_FINAL_PEN = penalties
+          const isAET = statusName.includes('AET') || statusName.includes('EXTRA');
+          const isPEN = statusName.includes('PEN') || statusName.includes('PENALT');
+          const isFT  = statusType?.completed && !isAET && !isPEN;
+          const isLive = statusType?.state === 'in';
 
           return {
             home: home?.team?.displayName || home?.team?.name || '',
             away: away?.team?.displayName || away?.team?.name || '',
             goalsHome: home?.score != null ? parseInt(home.score) : null,
             goalsAway: away?.score != null ? parseInt(away.score) : null,
-            status: normalizeEspnStatus(statusType?.state, statusType?.completed),
+            // Send clean status so app knows what to do
+            status: isAET ? 'AET' : isPEN ? 'PEN' : isFT ? 'FT' : isLive ? '1H' : 'NS',
             minute: comp?.status?.displayClock || null,
           };
         }).filter(f => f.home && f.away);
@@ -47,7 +52,7 @@ export default async function handler(req, res) {
     console.log('ESPN failed:', e.message);
   }
 
-  // --- Fuente 2: openfootball GitHub (fallback) ---
+  // --- Fallback: openfootball ---
   try {
     const r2 = await fetch(
       'https://raw.githubusercontent.com/openfootball/worldcup.json/master/2026/worldcup.json',
@@ -55,8 +60,7 @@ export default async function handler(req, res) {
     );
     if (r2.ok) {
       const data = await r2.json();
-      const matches = data.matches || [];
-      const fixtures = matches.map(m => ({
+      const fixtures = (data.matches || []).map(m => ({
         home: m.team1 || '',
         away: m.team2 || '',
         goalsHome: m.score?.ft?.[0] ?? null,
@@ -72,16 +76,5 @@ export default async function handler(req, res) {
     console.log('openfootball failed:', e.message);
   }
 
-  return res.status(503).json({
-    error: 'Fuentes no disponibles. Ingresa resultados manualmente.',
-    fixtures: [],
-  });
-}
-
-function normalizeEspnStatus(state, completed) {
-  // ESPN states: 'pre', 'in', 'post'
-  if (completed) return 'FT';
-  if (state === 'in') return '1H';
-  if (state === 'post') return 'FT';
-  return 'NS';
+  return res.status(503).json({ error: 'Fuentes no disponibles.', fixtures: [] });
 }
