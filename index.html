@@ -395,7 +395,7 @@ body{background:var(--dark);color:var(--text);font-family:'DM Sans',sans-serif;f
   </div>
 
   <div id="tab-results" class="section">
-    <div class="banner"><span class="ldot"></span>Resultados automáticos vía ESPN cada 5 min — sin configuración necesaria.</div>
+    <div class="banner"><span class="ldot"></span>Resultados automáticos vía ESPN cada 5 min. <strong>Solo 90 minutos</strong> — si el partido fue a tiempo extra o penales, ingresa el marcador manualmente al minuto 90.</div>
     <!-- Resultados automáticos vía ESPN — sin configuración necesaria -->
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
       <div id="api-status" style="font-size:12px;color:var(--muted)"></div>
@@ -1482,19 +1482,22 @@ async function autoFetchResults(){
       // Skip if ESPN doesn't have real scores yet
       if(hs===null||hs===undefined||as_===null||as_===undefined) continue;
 
-      // Only update finished or in-play matches
-      if(status!=='FT'&&status!=='AET'&&status!=='PEN'&&
-         status!=='1H'&&status!=='2H'&&status!=='HT'&&status!=='ET') continue;
+      // Only update live matches (1H, 2H, HT) or exactly FT (90 min)
+      // NEVER auto-save AET or PEN scores — those include extra time/penalties
+      // which don't count for picks. Admin must enter 90-min score manually.
+      if(status!=='FT'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
 
-      // NEVER overwrite a manually-entered Supabase result with ESPN 0-0
-      // unless ESPN explicitly says FT and has positive score or it's truly 0-0
       const existing = realResults[ourId];
-      if(existing && (existing.home>0||existing.away>0) && hs===0 && as_===0 && status!=='FT') {
-        // Suspicious: we have real scores but ESPN says 0-0 and not finished
-        // Keep our data
+
+      // If we already have a manually-saved result in Supabase for a finished match,
+      // NEVER overwrite it with the API score (admin may have set 90-min score)
+      if(existing && status==='FT') {
+        // Already has a result — trust the manually entered one
         continue;
       }
 
+      // For live matches (1H, 2H, HT): always update current score
+      // For FT with no existing result: save it
       if(existing?.home===hs && existing?.away===as_) continue; // no change
 
       realResults[ourId] = {home:hs, away:as_};
