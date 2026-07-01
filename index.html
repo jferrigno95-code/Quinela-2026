@@ -1439,66 +1439,48 @@ function findMatchId(homeApi, awayApi){
 async function autoFetchResults(){
   await loadFromSupabase();
 
-  // Ya no se requiere API key — usamos ESPN (gratis, sin auth) vía /api/scores
   try{
     const resp = await fetch('/api/scores');
-
-    if(!resp.ok){
-      const err = await resp.json().catch(()=>({}));
-      updateApiStatus('error', err.error || `Error ${resp.status}`);
-      return;
-    }
+    if(!resp.ok){ updateApiStatus('error', `Error ${resp.status}`); return; }
 
     const data = await resp.json();
-    if(data.error){
-      const msg = data.error;
-      if(msg.includes('token')||msg.includes('key')||msg.includes('auth')){
-        updateApiStatus('error','API Key inválida — verifica en api-sports.io');
-      } else if(msg.includes('limit')||msg.includes('rate')){
-        updateApiStatus('error','Límite diario alcanzado (100/día gratis)');
-      } else {
-        updateApiStatus('error', msg.slice(0,80));
-      }
-      return;
-    }
+    if(data.error){ updateApiStatus('error', data.error.slice(0,80)); return; }
 
     const fixtures = data.fixtures || [];
-    if(!fixtures.length){
-      updateApiStatus('nodata');
-      return;
-    }
+    if(!fixtures.length){ updateApiStatus('nodata'); return; }
 
     let updated = 0;
     for(const fix of fixtures){
       const status = fix.status;
-
       const ourId = findMatchId(fix.home||'', fix.away||'');
       if(!ourId) continue;
 
-      // Only update if ESPN gives us real goal data (not null)
       const hs = fix.goalsHome;
       const as_ = fix.goalsAway;
-
-      // Skip if ESPN doesn't have real scores yet
       if(hs===null||hs===undefined||as_===null||as_===undefined) continue;
-
-      // Only update live matches (1H, 2H, HT) or exactly FT (90 min)
-      // NEVER auto-save AET or PEN scores — those include extra time/penalties
-      // which don't count for picks. Admin must enter 90-min score manually.
-      if(status!=='FT'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
 
       const existing = realResults[ourId];
 
-      // If we already have a manually-saved result in Supabase for a finished match,
-      // NEVER overwrite it with the API score (admin may have set 90-min score)
-      if(existing && status==='FT') {
-        // Already has a result — trust the manually entered one
+      // ── REGLA PRINCIPAL: solo actualizamos marcadores de 90 min ──
+      // Si el partido terminó en AET o PEN, ESPN tiene el marcador final
+      // con goles de tiempo extra — NO lo guardamos automáticamente.
+      // El admin debe ingresar el marcador a 90 min manualmente.
+      if(status==='AET'||status==='PEN'){
+        // Si YA tenemos un resultado guardado en Supabase, lo conservamos
+        // (asumimos que el admin ya puso el marcador correcto a 90 min)
         continue;
       }
 
-      // For live matches (1H, 2H, HT): always update current score
-      // For FT with no existing result: save it
-      if(existing?.home===hs && existing?.away===as_) continue; // no change
+      // Si ya hay resultado guardado en Supabase para partido terminado, no tocar
+      // (puede ser que el admin lo ingresó manualmente con el score de 90 min)
+      if(existing && status==='FT'){
+        continue;
+      }
+
+      // Partidos en vivo (1H, 2H, HT): actualizar score en tiempo real
+      if(status!=='FT'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
+
+      if(existing?.home===hs && existing?.away===as_) continue;
 
       realResults[ourId] = {home:hs, away:as_};
       if(useSupabase) await saveResult(ourId, hs, as_);
