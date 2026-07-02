@@ -1472,16 +1472,24 @@ async function autoFetchResults(){
 
       const existing = realResults[ourId];
 
-      // ── REGLA PRINCIPAL: respetar resultados bloqueados ──
-      // Si el resultado está marcado como locked en Supabase,
-      // significa que el admin ingresó el marcador correcto a 90 min.
-      // NUNCA sobreescribir un resultado locked.
-      if(existing?.locked === true){
+      // ── REGLA 1: Resultados manuales — NUNCA sobreescribir ──
+      if(MANUAL_RESULTS[ourId] !== undefined){
+        // Asegurar que el resultado correcto esté siempre aplicado
+        const manual = MANUAL_RESULTS[ourId];
+        if(realResults[ourId]?.home !== manual.home || realResults[ourId]?.away !== manual.away){
+          realResults[ourId] = manual;
+          if(useSupabase) await saveResult(ourId, manual.home, manual.away, true);
+        }
+        continue; // no procesar el resultado de ESPN para este partido
+      }
+
+      // ── REGLA 2: AET/PEN — ignorar score de ESPN ──
+      if(status==='AET'||status==='PEN'){
         continue;
       }
 
-      // AET/PEN: ESPN tiene marcador con tiempo extra — ignorar completamente
-      if(status==='AET'||status==='PEN'){
+      // ── REGLA 3: Resultado ya locked en Supabase — no tocar ──
+      if(existing?.locked === true){
         continue;
       }
 
@@ -1636,6 +1644,14 @@ function renderBonusView(){
    PIZARRA DE PICKS
    ════════════════════════════════════════ */
 let pzPhase = 'Grupo A';
+
+// ── Resultados manuales a 90 minutos ──
+// Agrega aquí cualquier partido que fue a tiempo extra o penales
+// Formato: match_id: {home: goles_local, away: goles_visitante}
+// Estos NUNCA se sobreescriben con datos de la API
+const MANUAL_RESULTS = {
+  81: {home: 2, away: 2},  // Bélgica vs Senegal — 2-2 a 90 min (fue a penales)
+};
 let pzOpen = null; // currently open match id
 
 function renderPizarra(){
@@ -2431,6 +2447,11 @@ async function init(){
       localStorage.setItem('qm26_bonus', JSON.stringify(myBonus));
     }
   }
+
+  // Apply manual results immediately (overrides anything in cache)
+  Object.entries(MANUAL_RESULTS).forEach(([id, score]) => {
+    realResults[parseInt(id)] = {...score, locked: true};
+  });
 
   renderFilters();
   renderMatches();
