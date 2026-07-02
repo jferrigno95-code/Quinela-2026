@@ -680,12 +680,17 @@ async function loadFromSupabase(){
     }
     const {data:rData} = await sb.from('results').select('*');
     if(rData && rData.length > 0){
-      // Only update if Supabase returned actual data (avoid wiping on empty response)
       realResults={};
-      rData.forEach(r=>{ realResults[r.match_id]={home:r.home_score,away:r.away_score}; });
+      // Store locked status alongside scores
+      rData.forEach(r=>{
+        realResults[r.match_id]={
+          home:r.home_score,
+          away:r.away_score,
+          locked: r.locked === true  // locked = admin entered 90-min score manually
+        };
+      });
       localStorage.setItem('qm26_r',JSON.stringify(realResults));
     } else if(rData && rData.length === 0) {
-      // Supabase returned empty — keep localStorage data as fallback
       console.log('Supabase results empty — keeping local cache');
     }
   }catch(e){ console.log('Load error',e); }
@@ -713,9 +718,14 @@ async function saveParticipant(name,picks){
     );
   }catch(e){ console.log('Save error',e); }
 }
-async function saveResult(id,h,a){
+async function saveResult(id,h,a,locked=false){
   if(!useSupabase) return;
-  try{ await sb.from('results').upsert({match_id:id,home_score:h,away_score:a},{onConflict:'match_id'}); }catch(e){}
+  try{
+    await sb.from('results').upsert(
+      {match_id:id, home_score:h, away_score:a, locked:locked},
+      {onConflict:'match_id'}
+    );
+  }catch(e){}
 }
 
 /* ════════════════════════════════════════
@@ -1382,13 +1392,14 @@ async function saveMatchResult(id){
   const ra=document.getElementById(`ra_${id}`)?.value;
   if(rh===''||ra===''){toast('Ingresa ambos marcadores');return;}
   const h=parseInt(rh),a=parseInt(ra);
-  realResults[id]={home:h,away:a};
-  if(useSupabase) await saveResult(id,h,a);
+  // locked=true: resultado ingresado manualmente — nunca sobreescribir con API
+  realResults[id]={home:h,away:a,locked:true};
+  if(useSupabase) await saveResult(id,h,a,true);
   else localStorage.setItem('qm26_r',JSON.stringify(realResults));
-  toast('Resultado guardado ✓');
+  toast('Resultado guardado y bloqueado ✓');
   renderResults();
   renderRanking();
-  renderMatches(); // re-lock match if now started
+  renderMatches();
 }
 
 /* ════════════════════════════════════════
@@ -1461,23 +1472,20 @@ async function autoFetchResults(){
 
       const existing = realResults[ourId];
 
-      // ── REGLA PRINCIPAL: solo actualizamos marcadores de 90 min ──
-      // Si el partido terminó en AET o PEN, ESPN tiene el marcador final
-      // con goles de tiempo extra — NO lo guardamos automáticamente.
-      // El admin debe ingresar el marcador a 90 min manualmente.
+      // ── REGLA PRINCIPAL: respetar resultados bloqueados ──
+      // Si el resultado está marcado como locked en Supabase,
+      // significa que el admin ingresó el marcador correcto a 90 min.
+      // NUNCA sobreescribir un resultado locked.
+      if(existing?.locked === true){
+        continue;
+      }
+
+      // AET/PEN: ESPN tiene marcador con tiempo extra — ignorar completamente
       if(status==='AET'||status==='PEN'){
-        // Si YA tenemos un resultado guardado en Supabase, lo conservamos
-        // (asumimos que el admin ya puso el marcador correcto a 90 min)
         continue;
       }
 
-      // Si ya hay resultado guardado en Supabase para partido terminado, no tocar
-      // (puede ser que el admin lo ingresó manualmente con el score de 90 min)
-      if(existing && status==='FT'){
-        continue;
-      }
-
-      // Partidos en vivo (1H, 2H, HT): actualizar score en tiempo real
+      // Solo aceptar FT (90 min) y partidos en vivo
       if(status!=='FT'&&status!=='1H'&&status!=='2H'&&status!=='HT') continue;
 
       if(existing?.home===hs && existing?.away===as_) continue;
