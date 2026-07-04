@@ -686,8 +686,12 @@ async function loadFromSupabase(){
         realResults[r.match_id]={
           home:r.home_score,
           away:r.away_score,
-          locked: r.locked === true  // locked = admin entered 90-min score manually
+          locked: r.locked === true
         };
+      });
+      // PRIORIDAD ABSOLUTA: resultados manuales siempre ganan
+      Object.entries(MANUAL_RESULTS).forEach(([id,score])=>{
+        realResults[parseInt(id)]={...score,locked:true};
       });
       localStorage.setItem('qm26_r',JSON.stringify(realResults));
     } else if(rData && rData.length === 0) {
@@ -2471,9 +2475,23 @@ async function init(){
       .on('postgres_changes',{event:'*',schema:'public',table:'results'}, async(payload)=>{
         if(payload.new){
           const r=payload.new;
-          realResults[r.match_id]={home:r.home_score,away:r.away_score};
+          // NUNCA sobreescribir con Realtime si el partido está en MANUAL_RESULTS
+          if(MANUAL_RESULTS[r.match_id] !== undefined){
+            // Forzar el resultado manual correcto
+            const manual = MANUAL_RESULTS[r.match_id];
+            realResults[r.match_id] = {...manual, locked:true};
+          } else if(r.locked){
+            // Respetar resultados bloqueados manualmente
+            realResults[r.match_id] = {home:r.home_score, away:r.away_score, locked:true};
+          } else {
+            realResults[r.match_id] = {home:r.home_score, away:r.away_score};
+          }
           localStorage.setItem('qm26_r',JSON.stringify(realResults));
         }
+        // Re-apply all manual results after any realtime update
+        Object.entries(MANUAL_RESULTS).forEach(([id, score])=>{
+          realResults[parseInt(id)] = {...score, locked:true};
+        });
         renderMatches();
         const activeTab=document.querySelector('.tab.active')?.textContent;
         if(activeTab&&activeTab.includes('Leaderboard')) renderRanking();
