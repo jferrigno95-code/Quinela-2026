@@ -653,7 +653,20 @@ try { participants = JSON.parse(localStorage.getItem('qm26_p')  || '[]'); } catc
 try { realResults = JSON.parse(localStorage.getItem('qm26_r')   || '{}'); } catch(e){}
 try { bonusResults= JSON.parse(localStorage.getItem('qm26_br')  || '{}'); } catch(e){}
 // Override with hardcoded group winners (always accurate)
-const GROUP_WINNERS = {"b8":"México","b9":"Suiza","b10":"Brasil","b11":"USA","b12":"Alemania","b13":"Holanda","b14":"Bélgica","b15":"España","b16":"Francia","b17":"Argentina","b18":"Colombia","b19":"Inglaterra"};
+const GROUP_WINNERS = {
+  // Premios individuales finales
+  "b1":"España",
+  "b2":"Argentina",
+  "b3":"Francia",
+  "b4":"Kylian Mbappé (Francia) +600",
+  "b5":"Rodri (España) +8000",
+  "b6":"Unai Simón (España) +500",
+  "b7":"Lamine Yamal (España) +250",
+  // Ganadores de grupo
+  "b8":"México","b9":"Suiza","b10":"Brasil","b11":"USA",
+  "b12":"Alemania","b13":"Holanda","b14":"Bélgica","b15":"España",
+  "b16":"Francia","b17":"Argentina","b18":"Colombia","b19":"Inglaterra"
+};
 Object.assign(bonusResults, GROUP_WINNERS);
 try { myBonus    = JSON.parse(localStorage.getItem('qm26_bonus')|| '{}'); } catch(e){}
 try { paidMap    = JSON.parse(localStorage.getItem('qm26_paid') || '{}'); } catch(e){}
